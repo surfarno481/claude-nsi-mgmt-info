@@ -1,0 +1,195 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nsi-aura"
+version = "0.3.1.dev1"
+dependencies = [
+    "apscheduler==3.11.2",
+    "fastapi[standard]==0.136.1",
+    "fastui==0.9.0",
+    "lxml==6.1.0",
+    "psycopg2-binary==2.9.12",
+    "pydantic==2.13.4",
+    "pydantic-settings==2.14.1",
+    "python-statemachine==3.0.0",
+    "pytz==2026.2",
+    "requests==2.34.0",
+    "sqlmodel==0.0.38",
+    "structlog==25.5.0",
+]
+requires-python = ">=3.12"
+authors = [
+    {name = "Arno Bakker"},
+    {name = "Hans Trompert"},
+]
+maintainers = [
+    {name = "Arno Bakker"},
+    {name = "Hans Trompert"},
+]
+description = "Network Service Interface (NSI) ultimate Requester Agent (uRA) for the Advanced North Atlantic (ANA) consortium"
+readme = "README.md"
+keywords = [
+    "ANA",
+    "NSI",
+    "Python",
+]
+classifiers = [
+]
+
+license = "Apache-2.0"
+license-files = ["LICENSE.txt"]
+
+[tool.setuptools]
+packages = ["aura", "aura.frontend"]
+
+[tool.setuptools.data-files]
+"share/aura/static" = ["static/*"]
+
+[dependency-groups]
+dev = [
+    "black==26.3.1",
+    "flake8==7.3.0",
+    "flake8-bandit==4.1.1",
+    "flake8-bugbear==25.11.29",
+    "flake8-builtins==3.1.0",
+    "flake8-comprehensions==3.17.0",
+    "flake8-docstrings==1.7.0",
+    "flake8-implicit-str-concat==0.6.0",
+    "flake8-print==5.0.0",
+    "flake8-rst==0.8.0",
+    "flake8-string-format==0.3.0",
+    "isort==8.0.1",
+    "lxml-stubs==0.5.1",
+    "mypy==2.1.0",
+    "python-statemachine[diagrams]==3.0.0",
+    "ruff==0.15.12",
+    "types-pytz==2026.2.0.20260506",
+    "types-requests==2.33.0.20260508",
+    "pytest==9.0.3",
+    "pytest-asyncio==1.3.0",
+]
+
+[project.urls]
+# Homepage =
+# Documentation =
+Repository = "https://github.com/workfloworchestrator/nsi-aura.git"
+# "Bug Tracker" =
+# Changelog =
+
+[project.scripts]
+nsi-aura = "aura.__main__:main"
+
+[project.gui-scripts]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+lint.select = [
+    "ANN",
+    "ARG",
+    "B",
+    "B",
+    "C",
+    "C",
+    "D",
+    "D",
+    "E",
+    "E",
+    "F",
+    "F",
+    "I",
+    "I",
+    "N",
+    "N",
+    "PGH",
+    "PTH",
+    "Q",
+    "RET",
+    "RET",
+    "RUF",
+    "S",
+    "S",
+    "T",
+    "T",
+    "W",
+    "W",
+]
+lint.ignore = [
+    "ANN401",
+    "B905",
+    "C417",
+    "C901",
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+    "D203",
+    "D213",
+    "E501",
+    "N801",
+    "N802",
+    "N803",
+    "N805",
+    "N806",
+    "N815",
+    "N816",
+    "PGH003",
+    "S320",
+]
+exclude = ["old/*"]
+
+[tool.black]
+line-length = 120
+target-version = ["py313"]
+exclude = '''
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | venv
+    | old
+    | build
+  )/
+)
+'''
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 120
+forced_separate = "supa"
+skip = ["venv", "static"]
+profile = "black"
+skip_glob = ["old/*"]
+
+[tool.mypy]
+plugins = ['pydantic.mypy']
+ignore_missing_imports = true
+disallow_untyped_calls = false
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = false
+warn_unused_ignores = true
+warn_return_any = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+show_column_numbers = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

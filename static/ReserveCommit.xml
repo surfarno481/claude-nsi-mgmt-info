@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<soapenv:Envelope xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gns="http://nordu.net/namespaces/2013/12/gnsbod" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:type="http://schemas.ogf.org/nsi/2013/12/connection/types" xmlns:head="http://schemas.ogf.org/nsi/2013/12/framework/headers" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns="">
+  <soapenv:Header>
+    <head:nsiHeader>
+      <protocolVersion>application/vnd.ogf.nsi.cs.v2.provider+soap</protocolVersion>
+      <correlationId>#CORRELATION-ID#</correlationId>
+      <requesterNSA>urn:ogf:network:anaeng.global:2024:nsa:nsi-aura</requesterNSA>
+      <providerNSA>#PROVIDER-NSA-ID#</providerNSA>
+      <replyTo>#REPLY-TO-URL#</replyTo>
+      <sessionSecurityAttr>
+        <saml:Attribute Name="token">
+          <saml:AttributeValue xsi:type="xs:string"/>
+        </saml:Attribute>
+      </sessionSecurityAttr>
+    </head:nsiHeader>
+  </soapenv:Header>
+  <soapenv:Body>
+    <type:reserveCommit>
+      <connectionId>#CONNECTION-ID#</connectionId>
+    </type:reserveCommit>
+  </soapenv:Body>
+</soapenv:Envelope>

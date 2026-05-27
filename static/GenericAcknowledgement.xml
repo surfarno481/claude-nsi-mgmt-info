@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+  <soapenv:Header>
+    <nsi_headers:nsiHeader xmlns:nsi_headers="http://schemas.ogf.org/nsi/2013/12/framework/headers">
+      <protocolVersion>application/vnd.ogf.nsi.cs.v2.requester+soap</protocolVersion>
+      <correlationId>#CORRELATION-ID#</correlationId>
+      <requesterNSA>urn:ogf:network:anaeng.global:2024:nsa:nsi-aura</requesterNSA>
+      <providerNSA>#PROVIDER-NSA-ID#</providerNSA>
+    </nsi_headers:nsiHeader>
+  </soapenv:Header>
+  <soapenv:Body>
+    <nsi_ctypes:acknowledgment xmlns:nsi_ctypes="http://schemas.ogf.org/nsi/2013/12/connection/types"/>
+  </soapenv:Body>
+</soapenv:Envelope>

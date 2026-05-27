@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<soap:Envelope xmlns:ctypes="http://schemas.ogf.org/nsi/2013/12/connection/types" xmlns:header="http://schemas.ogf.org/nsi/2013/12/framework/headers" xmlns:ns2="http://nordu.net/namespaces/2013/12/gnsbod" xmlns:p2psrv="http://schemas.ogf.org/nsi/2013/12/services/point2point" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Header>
+    <header:nsiHeader>
+      <protocolVersion>application/vnd.ogf.nsi.cs.v2.provider+soap</protocolVersion>
+      <correlationId>#CORRELATION-ID#</correlationId>
+      <requesterNSA>urn:ogf:network:anaeng.global:2024:nsa:nsi-aura</requesterNSA>
+      <providerNSA>#PROVIDER-NSA-ID#</providerNSA>
+      <replyTo>#REPLY-TO-URL#</replyTo>
+      <ns2:ConnectionTrace>
+        <Connection index="0">urn:ogf:network:surf.nl:2020:onsaclient:1</Connection>
+      </ns2:ConnectionTrace>
+    </header:nsiHeader>
+  </soap:Header>
+  <soap:Body>
+    <ctypes:reserve>
+      <description>#CONNECTION-DESCRIPTION#</description>
+      <criteria version="1">
+        <schedule>
+          <!-- ommit startTime to start now -->
+          <startTime>#CONNECTION-START-TIME#</startTime>
+          <!-- ommit endTime to last indefinitely -->
+          <endTime>#CONNECTION-END-TIME#</endTime>
+        </schedule>
+        <serviceType>http://services.ogf.org/nsi/2013/12/descriptions/EVTS.A-GOLE</serviceType>
+        <p2psrv:p2ps>
+          <capacity>1000</capacity>
+          <directionality>Bidirectional</directionality>
+          <symmetricPath>true</symmetricPath>
+          <sourceSTP>#SOURCE-STP#</sourceSTP>
+          <destSTP>#DEST-STP#</destSTP>
+        </p2psrv:p2ps>
+      </criteria>
+    </ctypes:reserve>
+  </soap:Body>
+</soap:Envelope>
