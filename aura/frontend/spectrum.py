@@ -13,12 +13,16 @@
 # limitations under the License.
 
 # Arno TODO:
-# * Retrieve Spans for all or a given Reservation, and store in DB
+# * Retrieve Spans for all or a given Reservation from Aggregator Proxy, and store in DB
 # * Or: Live Retrieve Spans for all reservations, figure out which reservations use the same spectrum, show in spectrum detail view.
 #
 # Use https://github.com/workfloworchestrator/nsi-aggregator-proxy#get-reservationsconnectionid
 # with the "detail" parameter set to "full".
 #
+# Refactor:
+# * Talk to DDS-Proxy instead of DDS directly to get STP and SDP.
+# *
+
 from typing import Annotated
 
 from fastapi import APIRouter

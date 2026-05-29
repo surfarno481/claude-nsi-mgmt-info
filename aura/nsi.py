@@ -618,6 +618,54 @@ def nsi_util_get_xml(url: HttpUrl) -> bytes | None:
     return r.content
 
 
+def nsi_util_get_json(url: HttpUrl, queryparams:dict) -> bytes | None:
+    """
+    Returns: JSON as bytes/string ARNOTODO
+    """
+    log = logger.bind()
+
+    # throws Exception to higher layer for display to user
+    log.debug("SENDING HTTP REQUEST FOR JSON", url=str(url))
+    # 2024-11-08: SuPA moxy currently has self-signed certificate
+    try:
+        # Append queries to URL, assume caller did proper escaping.
+        fullurl = str(url)
+        if len(queryparams) > 0:
+            fullurl += "?"
+        for k,v in queryparams.items():
+            qstr = str(k) + "=" + str(v)
+            fullurl += "&" + qstr
+
+        r = session.get(
+            fullurl,
+            verify=settings.verify,
+            cert=(str(settings.NSI_AURA_CERTIFICATE), str(settings.NSI_AURA_PRIVATE_KEY)),
+        )
+    except requests.exceptions.ConnectionError as e:
+        log.warning("cannot get JSON document", url=str(url), error=str(e))
+        return None
+    # logger.debug log.debug(r.status_code)
+    # logger.debug log.debug(r.headers['content-type'])
+    # logger.debug log.debug(r.encoding)
+    log.debug(r.status_code)
+    log.debug(r.headers["content-type"])
+    log.debug(r.encoding)
+    log.debug(r.content)
+    # except:
+    #    log.debug("nsi_util_get_and_parse_xml: error talking to "+url,file=sys.stderr)
+    #    traceback.print_exc()
+    #    return None
+
+    if r.status_code != 200:
+        log.warning(f"{url} returned {r.status_code} with message {r.reason}")
+        return None
+    if (content_type := r.headers["content-type"].lower()) != "application/json":
+        log.warning(f"{url} did not return application/json but {content_type}")
+        return None
+    return r.content
+
+
+
 #
 # Example dicts
 #

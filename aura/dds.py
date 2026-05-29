@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# ARNOTODO: talk to DDS proxy
+
 import base64
 import zlib
 
@@ -246,7 +248,7 @@ def unzip(document: dict) -> bytes:
 
 
 def get_dds_documents(url: HttpUrl) -> dict[str, dict[str, bytes]]:
-    """Retreive all documents from url and return them by type and id.
+    """Retrieve all documents from url and return them by type and id.
 
     Example:
     {'vnd.ogf.nsi.topology.v2+xml': {'urn:ogf:network:moxy.ana.dlp.surfnet.nl:2024:ana-moxy': b'<ns3:Topology> ...',

@@ -21,6 +21,7 @@ from pytz import utc
 
 from aura.db import Session
 from aura.dds import TOPOLOGY_MIME_TYPE, get_dds_documents, topology_to_stps, update_sdps, update_stps
+from aura.agg import segdicts_to_segments, update_segments
 from aura.fsm import ConnectionStateMachine
 from aura.model import STP, Reservation
 from aura.nsi import (
@@ -29,7 +30,7 @@ from aura.nsi import (
     nsi_send_reserve,
     nsi_send_reserve_commit,
     nsi_send_terminate,
-    nsi_xml_to_dict,
+    nsi_xml_to_dict, nsi_util_get_json,
 )
 from aura.settings import settings
 
@@ -51,13 +52,40 @@ def new_correlation_id_on_reservation(reservation_id: int) -> None:
         reservation = session.query(Reservation).filter(Reservation.id == reservation_id).one()  # type: ignore[arg-type]
         reservation.correlationId = uuid4()
 
-
 def nsi_poll_dds_job() -> None:
     """Poll the DDS for topology documents and update STP and SDP."""
     documents = get_dds_documents(settings.NSI_DDS_URL)
     stps = [stp for xml in documents[TOPOLOGY_MIME_TYPE].values() for stp in topology_to_stps(nsi_xml_to_dict(xml))]
     update_stps(stps)
     update_sdps()
+
+def nsi_poll_agg_job() -> None:
+    """Poll the Aggregator for reservations and update Reservations and Segment data model."""
+    queryparams = {"details":"full"}
+    url = settings.NSI_AGG_PROXY_URL
+    jsondata = nsi_util_get_json(url,queryparams)
+    if jsondata is None:
+        # Error already logged
+        return
+    try:
+        jsondict = json.loads(jsondata)
+    except Error as e:
+        log.warning("cannot parse reservations JSON document", url=str(url), error=str(e))
+        return None
+    if "reservations" not in jsondict:
+        log.warning("No reservations in reservations JSON document", url=str(url))
+        return None
+
+    # Update Reservations
+    for resdict in jsondict["reservations"]:
+        # ARNOTODO
+        # Update reservations DB
+        if "connectionId" in resdict and "segments" in resdict:
+            # Update Segments DB
+            segments = segdicts_to_segments(resdict["connectionId"],resdict["segments"])
+            update_segments(segments)
+            update_segments()
+
 
 
 def nsi_send_reserve_job(reservation_id: int) -> None:
@@ -112,25 +140,6 @@ def nsi_send_terminate_job(reservation_id: int) -> None:
         # TODO: transition to error state (that needs to be defined)
     else:
         log.info("terminate successfully sent")
-
-
-# def gui_retry_reserve_connection_job(reservation_id: int) -> None:
-#     new_correlation_id_on_reservation(reservation_id)
-#     with Session() as session:
-#         reservation = session.query(Reservation).filter(Reservation.id == reservation_id).one()
-#     log = logger.bind(
-#         reservationId=reservation.id,
-#         correlationId=str(reservation.correlationId),
-#         connectionId=str(reservation.connectionId),
-#     )
-#     log.info("send reserve abort to nsi provider")
-#     reply_dict = nsi_send_reserve_abort(reservation)
-#     if "Fault" in reply_dict["Body"]:
-#         se = reply_dict["Body"]["Fault"]["detail"]["serviceException"]
-#         log.warning(f"send release failed: {se["text"]}", nsaId=se["nsaId"], errorId=se["errorId"], text=se["text"])
-#         # TODO: transition to error state (that needs to be defined)
-#     else:
-#         log.info("send reserve abort successful")
 
 
 def nsi_send_release_job(reservation_id: int) -> None:
