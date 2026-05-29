@@ -99,13 +99,13 @@ class TestRootPathRoutes:
         The fix is to NOT set root_path on the FastAPI app.
         """
         client = TestClient(app_with_root_path)
-        resp = client.get("/static/ANA-website-footer.png")
+        resp = client.get("/static/ANA-logo-scaled-ab2.png")
         assert resp.status_code == 200
 
     def test_static_files_work_without_root_path(self, test_app):
         """Static files must work in the default (no ROOT_PATH) case."""
         client = TestClient(test_app)
-        resp = client.get("/static/ANA-website-footer.png")
+        resp = client.get("/static/ANA-logo-scaled-ab2.png")
         assert resp.status_code == 200
 
 

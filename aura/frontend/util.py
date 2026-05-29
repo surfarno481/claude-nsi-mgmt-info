@@ -28,7 +28,7 @@ c.Link.model_rebuild()
 
 def app_page(*components: AnyComponent, title: str | None = None) -> list[AnyComponent]:
     return [
-        c.PageTitle(text=f"AURA — {title}" if title else "AURA PoC"),
+        c.PageTitle(text=f"AMISS — {title}" if title else "AMISS"),
         c.Navbar(
             title=settings.SITE_TITLE,
             title_event=GoToEvent(url="/"),
@@ -47,6 +47,11 @@ def app_page(*components: AnyComponent, title: str | None = None) -> list[AnyCom
                     components=[c.Text(text="SDP")],
                     on_click=GoToEvent(url="/sdp/active"),
                     active="startswith:/sdp",
+                ),
+                c.Link(
+                    components=[c.Text(text="Spectrum")],
+                    on_click=GoToEvent(url="/spectrum/active"),
+                    active="startswith:/spectrum",
                 ),
                 # c.Link(
                 #     components=[c.Text(text="Auth")],
@@ -68,7 +73,7 @@ def app_page(*components: AnyComponent, title: str | None = None) -> list[AnyCom
             ],
         ),
         c.Footer(
-            extra_text="AURA PoC",
+            extra_text="AMISS",
             links=[
                 c.Link(
                     components=[c.Text(text="Github")],
@@ -84,10 +89,10 @@ def aura_logo() -> AnyComponent:
         components=[
             c.Image(
                 # src='https://avatars.githubusercontent.com/u/110818415',
-                src=f"{settings.ROOT_PATH}/static/ANA-website-footer.png",
+                src=f"{settings.ROOT_PATH}/static/ANA-logo-scaled-ab2.png",
                 alt="ANA footer Logo",
-                width=900,
-                height=240,
+                width=400,
+                height=232,
                 loading="lazy",
                 referrer_policy="no-referrer",
             )
@@ -230,6 +235,20 @@ def sdp_table(sdps: list[SDP]) -> c.Table:
         class_name="+ small",
     )
 
+def spectrum_table(sdps: list[SDP]) -> c.Table:
+    return c.Table(
+        data_model=SDP,
+        data=sdps,
+        columns=[
+            DisplayLookup(field="id", on_click=GoToEvent(url="/spectrum/{id}/")),
+            DisplayLookup(field="stpAId"),
+            DisplayLookup(field="stpZId"),
+            DisplayLookup(field="vlanRange"),
+            DisplayLookup(field="description"),
+            DisplayLookup(field="active"),
+        ],
+        class_name="+ small",
+    )
 
 def reservation_tabs() -> list[AnyComponent]:
     return [

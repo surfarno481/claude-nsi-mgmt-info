@@ -24,7 +24,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """Aura application settings."""
 
-    SITE_TITLE: str = "AuRA - Demo"
+    SITE_TITLE: str = "AMISS"
 
     # host and port to bind to
     NSI_AURA_HOST: str = "127.0.0.1"
