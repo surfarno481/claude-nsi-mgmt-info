@@ -91,7 +91,23 @@ def spectrum_detail(id: int) -> list[AnyComponent]:
         return app_page(title=f"No SDP with id {id}.")
 
     global global_segments
-    segtable = segment_table(global_segments)
+    spectrum_segments = []
+    # Filter out segments for this SDP
+    wantSdpId = sdp.stpA.stpId
+    for segment in global_segments:
+        if '?' in segment.sourceStp:
+            print("ARNO GOT QUESTON", segment.sourceStp)
+            parts = segment.sourceStp.split("?")
+            sourceSdpId = parts[0]
+        else:
+            sourceSdpId = segment.sourceStp
+        if sourceSdpId == wantSdpId:
+            print("ARNO: SEGMENT MATCH", sourceSdpId)
+            spectrum_segments.append(segment)
+        else:
+            print("ARNO: SEGMENT NOT MATCH",wantSdpId,"!=",sourceSdpId)
+
+    segtable = segment_table(spectrum_segments)
 
     return app_page(
         button_row(

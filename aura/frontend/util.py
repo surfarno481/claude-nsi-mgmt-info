@@ -241,10 +241,10 @@ def spectrum_table(sdps: list[SDP]) -> c.Table:
         data=sdps,
         columns=[
             DisplayLookup(field="id", on_click=GoToEvent(url="/spectrum/{id}/")),
-            DisplayLookup(field="stpAId"),
-            DisplayLookup(field="stpZId"),
-            DisplayLookup(field="vlanRange"),
+            #DisplayLookup(field="stpAId"),
+            #DisplayLookup(field="stpZId"),
             DisplayLookup(field="description"),
+            DisplayLookup(field="vlanRange"),
             DisplayLookup(field="active"),
         ],
         class_name="+ small",
