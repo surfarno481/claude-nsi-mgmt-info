@@ -34,8 +34,8 @@ from fastui.forms import fastui_form
 from pydantic import BaseModel, Field
 
 from aura.db import Session
-from aura.frontend.util import app_page, button_row, spectrum_table
-from aura.model import SDP
+from aura.frontend.util import app_page, button_row, spectrum_table, segment_table
+from aura.model import SDP, global_segments
 
 router = APIRouter()
 
@@ -89,6 +89,10 @@ def spectrum_detail(id: int) -> list[AnyComponent]:
         sdp = session.query(SDP).filter(SDP.id == id).one_or_none()  # type: ignore[arg-type]
     if sdp is None:
         return app_page(title=f"No SDP with id {id}.")
+
+    global global_segments
+    segtable = segment_table(global_segments)
+
     return app_page(
         button_row(
             [
@@ -97,19 +101,11 @@ def spectrum_detail(id: int) -> list[AnyComponent]:
                     on_click=GoToEvent(url="/spectrum"),
                     class_name="+ ms-2",
                 ),
-                # c.Button(
-                #     text="Modify",
-                #     on_click=GoToEvent(url=f"/spectrum/{id}/modify"),
-                #     class_name="+ ms-2",
-                # ),
             ]
         ),
         c.Heading(text="SDP details", level=4),
         c.Details(data=sdp),
-        c.Heading(text="StpA details", level=4),
-        c.Details(data=sdp.stpA),
-        c.Heading(text="StpZ details", level=4),
-        c.Details(data=sdp.stpZ),
+        segtable,
         title=f"SDP {sdp.description}",
     )
 

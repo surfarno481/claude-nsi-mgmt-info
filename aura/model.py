@@ -124,6 +124,9 @@ class Log(SQLModel, table=True):
     timestamp: datetime
     message: str
 
+#
+# In-memory cf. AuRA 0.1
+#
 class Segment(BaseModel):
     """Segment in a NSI P2P circuit, as defined in Aggregator-Proxy API:
     https://github.com/workfloworchestrator/nsi-aggregator-proxy#query-parameters
@@ -151,3 +154,8 @@ class Segment(BaseModel):
     destStp: str
     status: str # | None
 
+global_segments = [
+    Segment(id=1,connectionId="moxy-child-seg-0",reservation_id="663EF9C9-34E7-4401-ADD1-E976072B526B",order=0,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="internet2.edu:2025:ana:manlan.ps1",destStp="internet2.edu:2025:ana:manlan.moxy-1?vlan=481",status="ACTIVE"),
+    Segment(id=2,connectionId="moxy-child-seg-1",reservation_id="663EF9C9-34E7-4401-ADD1-E976072B526B",order=1,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="internet2.edu:2025:ana:manlan.moxy-1?vlan=481",destStp="surf.nl:2020:ana:netherlight.moxy-1?vlan=481",status="ACTIVE"),
+    Segment(id=3,connectionId="moxy-child-seg-2",reservation_id="663EF9C9-34E7-4401-ADD1-E976072B526B",order=2,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="surf.nl:2020:ana:netherlight.moxy-1?vlan=481",destStp="surf.nl:2020:ana:netherlight.ps1",status="ACTIVE"),
+]

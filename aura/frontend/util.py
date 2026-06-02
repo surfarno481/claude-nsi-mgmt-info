@@ -19,7 +19,7 @@ from fastui.components.display import DisplayLookup
 from fastui.events import GoToEvent, PageEvent
 
 from aura.fsm import ConnectionStateMachine
-from aura.model import SDP, STP, Reservation
+from aura.model import SDP, STP, Reservation, Segment
 from aura.settings import settings
 
 # do not know why, but otherwise FastUI will complain
@@ -249,6 +249,23 @@ def spectrum_table(sdps: list[SDP]) -> c.Table:
         ],
         class_name="+ small",
     )
+
+def segment_table(segments: list[Segment]) -> c.Table:
+    return c.Table(
+        data_model=Segment,
+        data=segments,
+        columns=[
+            DisplayLookup(field="id", on_click=GoToEvent(url="/segment/{id}/")), # ARNOTODO
+            DisplayLookup(field="reservation_id"),
+            DisplayLookup(field="order"),
+            DisplayLookup(field="sourceStp"),
+            DisplayLookup(field="destStp"),
+            DisplayLookup(field="capacity"),
+        ],
+        class_name="+ small",
+    )
+
+
 
 def reservation_tabs() -> list[AnyComponent]:
     return [

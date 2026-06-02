@@ -79,12 +79,12 @@ def nsi_poll_agg_job() -> None:
     # Update Reservations
     for resdict in jsondict["reservations"]:
         # ARNOTODO
-        # Update reservations DB
+        # Update reservations in-memory
         if "connectionId" in resdict and "segments" in resdict:
-            # Update Segments DB
+            # Update Segments in-memory
             segments = segdicts_to_segments(resdict["connectionId"],resdict["segments"])
-
-
+            global global_segments
+            global_segments = segments
 
 def nsi_send_reserve_job(reservation_id: int) -> None:
     new_correlation_id_on_reservation(reservation_id)
