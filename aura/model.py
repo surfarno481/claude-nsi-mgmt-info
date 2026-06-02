@@ -154,8 +154,17 @@ class Segment(BaseModel):
     destStp: str
     status: str # | None
 
+#
+# Some dummy data
+#
+
 global_segments = [
     Segment(id=1,connectionId="moxy-child-seg-0",reservation_id="663EF9C9-34E7-4401-ADD1-E976072B526B",order=0,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="internet2.edu:2025:ana:manlan.ps1",destStp="internet2.edu:2025:ana:manlan.moxy-1?vlan=481",status="ACTIVE"),
     Segment(id=2,connectionId="moxy-child-seg-1",reservation_id="663EF9C9-34E7-4401-ADD1-E976072B526B",order=1,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="internet2.edu:2025:ana:manlan.moxy-1?vlan=481",destStp="surf.nl:2020:ana:netherlight.moxy-1?vlan=481",status="ACTIVE"),
     Segment(id=3,connectionId="moxy-child-seg-2",reservation_id="663EF9C9-34E7-4401-ADD1-E976072B526B",order=2,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="surf.nl:2020:ana:netherlight.moxy-1?vlan=481",destStp="surf.nl:2020:ana:netherlight.ps1",status="ACTIVE"),
+    Segment(id=4,connectionId="moxy-child-seg-3",reservation_id="193E4258-5AC3-4A99-A6C3-440DF9575E0A",order=0,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="internet2.edu:2025:ana:manlan.ps1",destStp="internet2.edu:2025:ana:manlan.moxy-1?vlan=139",status="ACTIVE"),
+    Segment(id=5,connectionId="moxy-child-seg-4",reservation_id="193E4258-5AC3-4A99-A6C3-440DF9575E0A",order=1,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="internet2.edu:2025:ana:manlan.moxy-1?vlan=139",destStp="surf.nl:2020:ana:netherlight.moxy-1?vlan=139",status="ACTIVE"),
+    Segment(id=6,connectionId="moxy-child-seg-6",reservation_id="193E4258-5AC3-4A99-A6C3-440DF9575E0A",order=2,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="surf.nl:2020:ana:netherlight.moxy-1?vlan=139",destStp="surf.nl:2020:ana:netherlight.ps1",status="ACTIVE"),
+    Segment(id=7,connectionId="nea3r-child-seg-0",reservation_id="35A542F5-9657-4EC0-96CE-4DD8A8EB5AB9",order=0,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="internet2.edu:2025:ana:manlan.ps1",destStp="internet2.edu:2025:ana:manlan.netherlight-1?vlan=868",status="ACTIVE"),
+    Segment(id=8,connectionId="nea3r-child-seg-1",reservation_id="35A542F5-9657-4EC0-96CE-4DD8A8EB5AB9",order=1,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="internet2.edu:2025:ana:manlan.netherlight-1?vlan=868",destStp="surf.nl:2020:ana:netherlight.ps1",status="ACTIVE"),
 ]
