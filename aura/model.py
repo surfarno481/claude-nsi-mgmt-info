@@ -18,6 +18,7 @@ from uuid import UUID
 
 from annotated_types import Ge, Gt, Le, doc
 from sqlmodel import Field, Relationship, SQLModel
+from pydantic import BaseModel
 
 #
 # Types
@@ -123,7 +124,7 @@ class Log(SQLModel, table=True):
     timestamp: datetime
     message: str
 
-class Segment(SQLModel, table=True):
+class Segment(BaseModel):
     """Segment in a NSI P2P circuit, as defined in Aggregator-Proxy API:
     https://github.com/workfloworchestrator/nsi-aggregator-proxy#query-parameters
     ##
@@ -137,21 +138,16 @@ class Segment(SQLModel, table=True):
     status: "ACTIVATED"
     ##
     """
-    id: int | None = Field(default=None, primary_key=True)
-    connectionId: UUID | None
+    id: int
+    connectionId: str # UUID | None
     # parent
-    reservation_id: int = Field(foreign_key="reservation.id")
+    reservation_id: str
     # other fields from Agg schema:
-    order: int = Field(default=-1)
-    providerNSA: str | None   # "urn:ogf:network:west.example.net:2025:nsa:supa",
-    serviceType: str | None   # "http://services.ogf.org/nsi/2013/12/descriptions/EVTS.A-GOLE",
-    capacity:  int = Field(default=1) # 1000,
-    sourceStpId: int = Field(foreign_key="stp.id")
-    destStpId: int = Field(foreign_key="stp.id")
-    status: str | None
-
-    # derived
-    reservation: Reservation = Relationship(sa_relationship_kwargs={"primaryjoin": "Segment.reservation_id == Reservation.id", "lazy": "joined"})
-    sourceStp: STP = Relationship(sa_relationship_kwargs={"primaryjoin": "Segment.sourceStpId == STP.id", "lazy": "joined"})
-    destStp: STP = Relationship(sa_relationship_kwargs={"primaryjoin": "Segment.destStpId == STP.id", "lazy": "joined"})
+    order: int
+    providerNSA: str # | None   # "urn:ogf:network:west.example.net:2025:nsa:supa",
+    serviceType: str # | None   # "http://services.ogf.org/nsi/2013/12/descriptions/EVTS.A-GOLE",
+    capacity:  int # = Field(default=1) # 1000,
+    sourceStp: str
+    destStp: str
+    status: str # | None
 

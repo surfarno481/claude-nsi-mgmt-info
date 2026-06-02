@@ -21,7 +21,7 @@ from pytz import utc
 
 from aura.db import Session
 from aura.dds import TOPOLOGY_MIME_TYPE, get_dds_documents, topology_to_stps, update_sdps, update_stps
-from aura.agg import segdicts_to_segments, update_segments
+from aura.agg import segdicts_to_segments
 from aura.fsm import ConnectionStateMachine
 from aura.model import STP, Reservation
 from aura.nsi import (
@@ -83,8 +83,6 @@ def nsi_poll_agg_job() -> None:
         if "connectionId" in resdict and "segments" in resdict:
             # Update Segments DB
             segments = segdicts_to_segments(resdict["connectionId"],resdict["segments"])
-            update_segments(segments)
-            update_segments()
 
 
 
