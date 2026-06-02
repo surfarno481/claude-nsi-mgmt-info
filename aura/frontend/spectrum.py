@@ -93,8 +93,8 @@ def spectrum_detail(id: int) -> list[AnyComponent]:
     global global_segments
     spectrum_segments = []
     # Filter out segments for this SDP
-    for wantSdpId in [sdp.stpA.stpId,sdp.stpZ.stpId]:
-        for segment in global_segments:
+    for segment in global_segments:
+        for wantSdpId in [sdp.stpA.stpId,sdp.stpZ.stpId]:
             if '?' in segment.sourceStp:
                 print("ARNO GOT QUESTON", segment.sourceStp)
                 parts = segment.sourceStp.split("?")
@@ -121,6 +121,7 @@ def spectrum_detail(id: int) -> list[AnyComponent]:
         ),
         c.Heading(text="SDP details", level=4),
         c.Details(data=sdp),
+        c.Heading(text="Reservations on this link", level=4),
         segtable,
         title=f"SDP {sdp.description}",
     )
