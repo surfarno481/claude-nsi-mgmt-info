@@ -122,3 +122,36 @@ class Log(SQLModel, table=True):
     filename: str
     timestamp: datetime
     message: str
+
+class Segment(SQLModel, table=True):
+    """Segment in a NSI P2P circuit, as defined in Aggregator-Proxy API:
+    https://github.com/workfloworchestrator/nsi-aggregator-proxy#query-parameters
+    ##
+    order: 0,
+    connectionId: "child-seg-0",
+    providerNSA: "urn:ogf:network:west.example.net:2025:nsa:supa",
+    serviceType: "http://services.ogf.org/nsi/2013/12/descriptions/EVTS.A-GOLE",
+    capacity: 1000,
+    sourceSTP: urn:ogf:network:west.example.net:2025:port-a?vlan=100,
+    destSTP: urn:ogf:network:west.example.net:2025:port-b?vlan=200",
+    status: "ACTIVATED"
+    ##
+    """
+    id: int | None = Field(default=None, primary_key=True)
+    connectionId: UUID | None
+    # parent
+    reservation_id: int = Field(foreign_key="reservation.id")
+    # other fields from Agg schema:
+    order: int = Field(default=-1)
+    providerNSA: str | None   # "urn:ogf:network:west.example.net:2025:nsa:supa",
+    serviceType: str | None   # "http://services.ogf.org/nsi/2013/12/descriptions/EVTS.A-GOLE",
+    capacity:  int = Field(default=1) # 1000,
+    sourceStpId: int = Field(foreign_key="stp.id")
+    destStpId: int = Field(foreign_key="stp.id")
+    status: str | None
+
+    # derived
+    reservation: Reservation = Relationship(sa_relationship_kwargs={"primaryjoin": "Segment.reservation_id == Reservation.id", "lazy": "joined"})
+    sourceStp: STP = Relationship(sa_relationship_kwargs={"primaryjoin": "Segment.sourceStpId == STP.id", "lazy": "joined"})
+    destStp: STP = Relationship(sa_relationship_kwargs={"primaryjoin": "Segment.destStpId == STP.id", "lazy": "joined"})
+

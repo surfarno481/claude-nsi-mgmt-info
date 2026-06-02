@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# ARNOTODO: Convert SDPs to Segment
+# ARNOTODO: Convert code for SDPs to Segment
 
 import base64
 import zlib
@@ -27,47 +27,60 @@ from aura.nsi import nsi_util_get_json
 
 logger = structlog.get_logger(__name__)
 
-
+"""
+{
+  "globalReservationId": "urn:uuid:5fa943ae-32e8-4faa-9080-0bbdc0f405e8",
+  "connectionId": "9adfed42-fa58-4d26-bf74-9f5e14ab2281",
+  "description": "My first multi domain connection",
+  "criteria": {
+    "version": 1,
+    "serviceType": "http://services.ogf.org/nsi/2013/12/descriptions/EVTS.A-GOLE",
+    "p2ps": {
+      "capacity": 1000,
+      "sourceSTP": "urn:ogf:network:x.domain.toplevel:2020:topology:ps1?vlan=1790",
+      "destSTP": "urn:ogf:network:y.domain.toplevel:2025:topology:ps2?vlan=1790"
+    }
+  },
+  "status": "ACTIVATED",
+  "lastError": null,
+  "segments": [
+    {
+      "order": 0,
+      "connectionId": "child-seg-0",
+      "providerNSA": "urn:ogf:network:west.example.net:2025:nsa:supa",
+      "serviceType": "http://services.ogf.org/nsi/2013/12/descriptions/EVTS.A-GOLE",
+      "capacity": 1000,
+      "sourceSTP": "urn:ogf:network:west.example.net:2025:port-a?vlan=100",
+      "destSTP": "urn:ogf:network:west.example.net:2025:port-b?vlan=200",
+      "status": "ACTIVATED"
+    }
+  ]
+}
+"""
 
 def segdicts_to_segments(connectionIdStr: str, segdicts: list) -> list[Segment]:
     """Parse dict representation of the segments making up the NSI reservation "connectionIdStr"
     and return the lists of Segments."""
     log = logger.bind(topology=connectionIdStr) # ARNOTODO: what does topology param do?
 
-    try:
-        bidirectionalPorts = to_dict("id", topology["BidirectionalPort"])
-        relations = to_dict("type", topology["Relation"])
-        inboundPorts = to_dict("id", relations[HAS_INBOUND_PORT]["PortGroup"])
-        outboundPorts = to_dict("id", relations[HAS_OUTBOUND_PORT]["PortGroup"])
-    except KeyError as e:
-        log.warning("cannot parse topology", error=f"cannot find {e!s} in topology")
-        return []
+    segments = []
 
-    stps = []
-    for bidirectionalPortId in bidirectionalPorts:
-        inboundPort: dict | None = None
-        outboundPort: dict | None = None
-        for unidirectionalPortId in to_list("id", bidirectionalPorts[bidirectionalPortId]["PortGroup"]):
-            if unidirectionalPortId in inboundPorts:
-                inboundPort = inboundPorts[unidirectionalPortId]
-            elif unidirectionalPortId in outboundPorts:
-                outboundPort = outboundPorts[unidirectionalPortId]
-            else:
-                log.warning(f"unidirectional port {unidirectionalPortId} not found")
-        inboundPortId: str | None = None
-        outboundPortId: str | None = None
-        inboundAliasId: str | None = None
-        outboundAliasId: str | None = None
-        if inboundPort and outboundPort:
-            if inboundPort["LabelGroup"] != outboundPort["LabelGroup"]:
-                log.warning(f"LabelGroups on in- and outbound ports of {bidirectionalPortId} do not match")
-            # the following breaks when the port has multiple relations, then Relation will be a list instead of a dict
-            if "Relation" in inboundPort and inboundPort["Relation"]["type"] == IS_ALIAS:
-                inboundPortId = strip_urn(inboundPort["id"])
-                inboundAliasId = strip_urn(inboundPort["Relation"]["PortGroup"]["id"])
-            if "Relation" in outboundPort and outboundPort["Relation"]["type"] == IS_ALIAS:
-                outboundPortId = strip_urn(outboundPort["id"])
-                outboundAliasId = strip_urn(outboundPort["Relation"]["PortGroup"]["id"])
+    for segdict in segdicts:
+        try:
+            order = int(segdict["order"]
+            childConnectionId = segdict["connectionId"]
+            providerNSA =  segdict["providerNSA"]
+            serviceType =  segdict["serviceType"]
+            capacity = int(segdict["capacity"]
+            sourceStpUrn =  segdict["sourceSTP"]
+            destStpUrn =  segdict["destSTP"]
+            status = segdict["status"]
+        except KeyError as e:
+            log.warning("cannot parse reservation JSON", error=f"cannot find {e!s} in reservation JSON")
+            continue
+
+        # Find Ids for given source and dest STPs
+
         stps.append(
             STP(
                 stpId=strip_urn(bidirectionalPortId),
@@ -81,10 +94,13 @@ def segdicts_to_segments(connectionIdStr: str, segdicts: list) -> list[Segment]:
                     if bidirectionalPorts[bidirectionalPortId]["name"]
                     else ""
                 ),
-                active=True,
+                status=status,
             )
         )
-        log.debug(f"found STP {bidirectionalPortId}: {stps[-1]}")
+        log.debug(f"found Segment {bidirectionalPortId}: {stps[-1]}")
+
+
+
     return stps
 
 
@@ -138,7 +154,7 @@ def has_alias(stp: STP) -> bool:
     return stp.inboundAlias is not None and stp.outboundAlias is not None
 
 
-def update_sdps() -> None:
+def update_segments() -> None:
     """Update SDP table."""
 
     def is_sdp(a: STP, z: STP) -> bool:
@@ -154,7 +170,7 @@ def update_sdps() -> None:
     with Session() as session:
         stps = session.query(STP).filter(STP.active == True).all()
     # find connected STPs
-    sdps = []
+    segments = []
     paired: set[int] = set()
     for a in stps:
         if a.id in paired:
@@ -163,12 +179,12 @@ def update_sdps() -> None:
             if z.id in paired or z.id == a.id:
                 continue
             if is_sdp(a, z):
-                sdps.append((a, z))
+                segments.append((a, z))
                 paired.add(a.id)
                 paired.add(z.id)
                 break
     # process found SDPs
-    for stp_a, stp_z in sdps:
+    for stp_a, stp_z in segments:
         description = f"{stp_a.description} <-> {stp_z.description}"
         log = logger.bind(
             stpAId=stp_a.stpId,
@@ -210,9 +226,9 @@ def update_sdps() -> None:
             else:
                 log.debug("SDP did not change")
     with Session.begin() as session:
-        existing_sdps = [sorted([sdp.stpAId, sdp.stpZId]) for sdp in session.query(SDP).filter(SDP.active).all()]
-        new_sdps = [sorted([sdp[0].id, sdp[1].id]) for sdp in sdps]
-        for vanished_sdp in [sdp for sdp in existing_sdps if sorted(sdp) not in new_sdps]:
+        existing_segments = [sorted([sdp.stpAId, sdp.stpZId]) for sdp in session.query(SDP).filter(SDP.active).all()]
+        new_segments = [sorted([sdp[0].id, sdp[1].id]) for sdp in segments]
+        for vanished_sdp in [sdp for sdp in existing_segments if sorted(sdp) not in new_segments]:
             stpA = session.query(STP).filter(STP.id == vanished_sdp[0]).one()
             stpZ = session.query(STP).filter(STP.id == vanished_sdp[1]).one()
             logger.info("mark SDP as inactive", stpA=stpA.stpId, stpZ=stpZ.stpId, vlanRange=stpA.vlanRange)
