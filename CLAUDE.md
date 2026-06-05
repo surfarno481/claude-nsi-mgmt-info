@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-NSI-AuRA (ultimate Requester Agent) — a FastAPI + FastUI web application for managing NSI network connections in the ANA consortium. Being replaced by nsi-dds-proxy, nsi-aggregator-proxy, and nsi-orchestrator.
+The **NSI Management Information Service** — a FastAPI + FastUI web service that surfaces and visualizes the information ANA management needs for strategic and engineering decision-making, aggregating data from the NSI-Orchestrator and other ANA-NSI components into overviews and statistics. **`README.md` is the ground truth** for the project's purpose and configuration.
+
+**Naming.** The project will ultimately be called **AMISS** (already the default `SITE_TITLE` in `aura/settings.py`), with **mgmt-info** as a secondary name — hence the `nsi-mgmt-info` repository and the `mgmt-info` CLI / `MGMTINFO_*` configuration documented in the README.
+
+**Origin / legacy `aura` naming.** The codebase is based on the older **NSI-AuRA** (uRA — ultimate Requester Agent) application — itself being superseded by nsi-dds-proxy, nsi-aggregator-proxy, and nsi-orchestrator — which is why much of the tree still carries `aura` names: the Python package `aura`, the config file `aura.env`, and the `nsi-aura` distribution and entry point declared in `pyproject.toml`. These are legacy artifacts being migrated toward the AMISS / mgmt-info naming. Where the README (mgmt-info, `MGMTINFO_*`) and the current `aura`-named code disagree, the README is authoritative.
 
 ## Commands
 
@@ -43,13 +47,13 @@ nsi-aura
 
 **NSI integration** (`aura/nsi.py`, `aura/dds.py`): SOAP/XML over HTTP with mutual TLS client certificates. `nsi.py` sends NSI commands to the provider. `dds.py` fetches and parses NML topology documents from the Document Distribution Service.
 
-**Database** (`aura/db.py`, `aura/model.py`): SQLModel ORM. SQLite by default (`sqlite:///db/aura.db`), PostgreSQL via `DATABASE_URI`. Models: `STP` (network endpoints), `SDP` (demarcation points connecting two STPs), `Reservation` (connection requests with state machine), `Log` (audit trail).
+**Database** (`aura/db.py`, `aura/model.py`): SQLModel ORM. SQLite by default (`sqlite:///db/aura.db`), PostgreSQL via `DATABASE_URI`. Table models: `STP` (network endpoints), `SDP` (demarcation points connecting two STPs via `stpA`/`stpZ`), `Reservation` (connection requests with state machine; references source/dest `STP` and links many-to-many to `SDP`), `ReservationSDPLink` (the Reservation↔SDP association table), `Log` (audit trail). `Segment` is **not** a table — it is an in-memory Pydantic `BaseModel` representing a path segment of an NSI P2P circuit (shaped after the nsi-aggregator-proxy API), e.g. parsed from the aggregator proxy in `aura/agg.py`.
 
 **Static files packaging**: `pyproject.toml` uses `[tool.setuptools.data-files]` to install static assets to `share/aura/static/` in the wheel. The Dockerfile sets `STATIC_DIRECTORY=/usr/local/share/aura/static` to point to the installed location.
 
 ## ROOT_PATH design decision
 
-When deployed behind the portal (nsi-mgmt-info), the app is served at path prefix `/aura`. The portal's nginx ingress strips this prefix before forwarding requests.
+When deployed behind a reverse-proxy portal, the app is served at path prefix `/aura`. The portal's nginx ingress strips this prefix before forwarding requests.
 
 **Do NOT set `FastAPI(root_path=...)`**. Starlette's `get_route_path()` assumes `scope["path"]` contains `root_path` as a prefix. When the proxy already stripped the prefix, this causes StaticFiles to double-count the mount path (looking up `static/static/file.png`), resulting in 404s.
 

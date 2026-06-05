@@ -59,6 +59,21 @@ logger = structlog.get_logger(__name__)
 }
 """
 
+def get_aggregator_reservations(proxy_url: HttpUrl) -> bytes | None:
+    """Fetch all reservations with full segment detail from the aggregator proxy.
+
+    Calls the aggregator proxy's ``GET /reservations`` endpoint with ``detail=full`` so the
+    returned reservations include their path ``segments``. ``proxy_url`` is the proxy base URL
+    (e.g. ``settings.NSI_AGG_PROXY_URL``); the ``/reservations`` path is appended to it.
+
+    Returns the raw JSON response body as bytes, or ``None`` if the request failed
+    (the underlying ``nsi_util_get_json`` already logs the reason).
+    """
+    reservations_url = HttpUrl(f"{str(proxy_url).rstrip('/')}/reservations")
+    queryparams = {"detail": "full"}
+    return nsi_util_get_json(reservations_url, queryparams)
+
+
 def segdicts_to_segments(parentConnectionIdStr: str, segdicts: list) -> list[Segment]:
     """Parse dict representation of the segments making up the NSI reservation "parentConnectionIdStr"
     and return the lists of Segments."""
