@@ -21,7 +21,7 @@ from pytz import utc
 
 from aura.db import Session
 from aura.dds import TOPOLOGY_MIME_TYPE, get_dds_documents, topology_to_stps, update_sdps, update_stps
-from aura.agg import segdicts_to_segments
+from aura.agg import segdicts_to_segments, get_aggregator_reservations
 from aura.fsm import ConnectionStateMachine
 from aura.model import STP, Reservation
 from aura.nsi import (
@@ -61,9 +61,8 @@ def nsi_poll_dds_job() -> None:
 
 def nsi_poll_agg_job() -> None:
     """Poll the Aggregator for reservations and update Reservations and Segment data model."""
-    queryparams = {"details":"full"}
     url = settings.NSI_AGG_PROXY_URL
-    jsondata = nsi_util_get_json(url,queryparams)
+    jsondata = get_aggregator_reservations(url)
     if jsondata is None:
         # Error already logged
         return
