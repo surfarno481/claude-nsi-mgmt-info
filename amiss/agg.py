@@ -22,9 +22,9 @@ import structlog
 from pydantic import HttpUrl
 from sqlalchemy import or_, update
 
-from aura.db import Session
-from aura.model import SDP, STP, Segment
-from aura.nsi import nsi_util_get_json
+from amiss.db import Session
+from amiss.model import SDP, STP, Segment
+from amiss.nsi import nsi_util_get_json
 
 logger = structlog.get_logger(__name__)
 

@@ -18,8 +18,8 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import create_engine
 
-from aura.model import SQLModel
-from aura.settings import settings
+from amiss.model import SQLModel
+from amiss.settings import settings
 
 logger = structlog.get_logger(__name__)
 

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for aura.nsi: HTTP communication functions (mocked)."""
+"""Tests for amiss.nsi: HTTP communication functions (mocked)."""
 
 from unittest.mock import MagicMock, patch
 
@@ -21,9 +21,9 @@ import requests.exceptions
 
 
 class TestNsiUtilGetXml:
-    @patch("aura.nsi.session")
+    @patch("amiss.nsi.session")
     def test_successful_get(self, mock_session):
-        from aura.nsi import nsi_util_get_xml
+        from amiss.nsi import nsi_util_get_xml
 
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -35,18 +35,18 @@ class TestNsiUtilGetXml:
         result = nsi_util_get_xml("http://example.com/doc")
         assert result == b"<xml/>"
 
-    @patch("aura.nsi.session")
+    @patch("amiss.nsi.session")
     def test_connection_error_returns_none(self, mock_session):
-        from aura.nsi import nsi_util_get_xml
+        from amiss.nsi import nsi_util_get_xml
 
         mock_session.get.side_effect = requests.exceptions.ConnectionError("fail")
 
         result = nsi_util_get_xml("http://example.com/doc")
         assert result is None
 
-    @patch("aura.nsi.session")
+    @patch("amiss.nsi.session")
     def test_non_200_returns_none(self, mock_session):
-        from aura.nsi import nsi_util_get_xml
+        from amiss.nsi import nsi_util_get_xml
 
         mock_response = MagicMock()
         mock_response.status_code = 404
@@ -59,9 +59,9 @@ class TestNsiUtilGetXml:
         result = nsi_util_get_xml("http://example.com/doc")
         assert result is None
 
-    @patch("aura.nsi.session")
+    @patch("amiss.nsi.session")
     def test_wrong_content_type_returns_none(self, mock_session):
-        from aura.nsi import nsi_util_get_xml
+        from amiss.nsi import nsi_util_get_xml
 
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -75,9 +75,9 @@ class TestNsiUtilGetXml:
 
 
 class TestNsiUtilPostSoap:
-    @patch("aura.nsi.session")
+    @patch("amiss.nsi.session")
     def test_successful_post(self, mock_session):
-        from aura.nsi import nsi_util_post_soap
+        from amiss.nsi import nsi_util_post_soap
 
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -88,9 +88,9 @@ class TestNsiUtilPostSoap:
         result = nsi_util_post_soap("http://example.com/nsi", b"<request/>")
         assert result == b"<soap:Envelope/>"
 
-    @patch("aura.nsi.session")
+    @patch("amiss.nsi.session")
     def test_non_xml_response_raises(self, mock_session):
-        from aura.nsi import nsi_util_post_soap
+        from amiss.nsi import nsi_util_post_soap
 
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -100,18 +100,18 @@ class TestNsiUtilPostSoap:
         with pytest.raises(Exception, match="did not return XML"):
             nsi_util_post_soap("http://example.com/nsi", b"<request/>")
 
-    @patch("aura.nsi.session")
+    @patch("amiss.nsi.session")
     def test_connection_error_propagates(self, mock_session):
-        from aura.nsi import nsi_util_post_soap
+        from amiss.nsi import nsi_util_post_soap
 
         mock_session.post.side_effect = requests.exceptions.ConnectionError("fail")
 
         with pytest.raises(requests.exceptions.ConnectionError):
             nsi_util_post_soap("http://example.com/nsi", b"<request/>")
 
-    @patch("aura.nsi.session")
+    @patch("amiss.nsi.session")
     def test_non_200_raises(self, mock_session):
-        from aura.nsi import nsi_util_post_soap
+        from amiss.nsi import nsi_util_post_soap
 
         mock_response = MagicMock()
         mock_response.status_code = 500

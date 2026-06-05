@@ -20,16 +20,16 @@ from fastapi.staticfiles import StaticFiles
 from fastui import prebuilt_html
 from starlette.responses import HTMLResponse, PlainTextResponse
 
-from aura.frontend.healthcheck import router as healthcheck_router
-from aura.frontend.home import router as home_router
-from aura.frontend.nsi import router as nsi_router
-from aura.frontend.reservations import router as reservations_router
-from aura.frontend.sdp import router as sdp_router
-from aura.frontend.stp import router as stp_router
-from aura.frontend.spectrum import router as spectrum_router
-from aura.job import nsi_poll_dds_job, scheduler
-from aura.log import init as log_init
-from aura.settings import settings
+from amiss.frontend.healthcheck import router as healthcheck_router
+from amiss.frontend.home import router as home_router
+from amiss.frontend.nsi import router as nsi_router
+from amiss.frontend.reservations import router as reservations_router
+from amiss.frontend.sdp import router as sdp_router
+from amiss.frontend.stp import router as stp_router
+from amiss.frontend.spectrum import router as spectrum_router
+from amiss.job import nsi_poll_dds_job, scheduler
+from amiss.log import init as log_init
+from amiss.settings import settings
 
 #
 # logging

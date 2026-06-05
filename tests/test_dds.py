@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for aura.dds: DDS parsing functions."""
+"""Tests for amiss.dds: DDS parsing functions."""
 
 import base64
 import zlib
@@ -21,8 +21,8 @@ from unittest.mock import patch
 import pytest
 from sqlalchemy import or_, update
 
-from aura.dds import has_alias, strip_urn, to_dict, to_list, topology_to_stps, unzip, update_sdps
-from aura.model import SDP, STP
+from amiss.dds import has_alias, strip_urn, to_dict, to_list, topology_to_stps, unzip, update_sdps
+from amiss.model import SDP, STP
 from tests.data.topology_samples import MINIMAL_TOPOLOGY, MOXY_TOPOLOGY
 
 
@@ -280,8 +280,8 @@ class TestUpdateSdps:
 
     @staticmethod
     def _patch_session(db_session):
-        """Create a patch context that routes aura.dds.Session to the test db_session."""
-        mock = patch("aura.dds.Session")
+        """Create a patch context that routes amiss.dds.Session to the test db_session."""
+        mock = patch("amiss.dds.Session")
         mock_session_cls = mock.start()
         mock_session_cls.return_value.__enter__ = lambda _: db_session
         mock_session_cls.return_value.__exit__ = lambda *_: None

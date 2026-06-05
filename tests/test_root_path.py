@@ -15,7 +15,7 @@
 """Tests for ROOT_PATH configuration.
 
 Verifies that the FastAPI app respects the ROOT_PATH setting so that
-it works correctly behind a reverse proxy with a path prefix (e.g. /aura),
+it works correctly behind a reverse proxy with a path prefix (e.g. /amiss),
 including FastUI prebuilt_html parameters for the React SPA and that
 image paths, form submit URLs, and search URLs are correctly prefixed.
 """
@@ -23,13 +23,13 @@ image paths, form submit URLs, and search URLs are correctly prefixed.
 import pytest
 from fastapi.testclient import TestClient
 
-from aura.settings import Settings
+from amiss.settings import Settings
 
 
 @pytest.fixture()
 def test_app():
     """Create the FastAPI app for testing."""
-    from aura import app
+    from amiss import app
 
     return app
 
@@ -43,10 +43,10 @@ def app_with_root_path(test_app):
     strips the prefix before forwarding, this breaks StaticFiles mounts by
     double-counting the mount path in the file lookup.
     """
-    from aura.settings import settings
+    from amiss.settings import settings
 
     original_settings_root = settings.ROOT_PATH
-    settings.ROOT_PATH = "/aura"
+    settings.ROOT_PATH = "/amiss"
     test_app.openapi_schema = None
     yield test_app
     settings.ROOT_PATH = original_settings_root
@@ -59,9 +59,9 @@ class TestRootPathConfig:
         assert settings.ROOT_PATH == ""
 
     def test_root_path_from_env(self, monkeypatch):
-        monkeypatch.setenv("ROOT_PATH", "/aura")
+        monkeypatch.setenv("ROOT_PATH", "/amiss")
         settings = Settings()
-        assert settings.ROOT_PATH == "/aura"
+        assert settings.ROOT_PATH == "/amiss"
 
 
 class TestRootPathOpenApi:
@@ -124,7 +124,7 @@ class TestRootPathPrebuiltHtml:
         assert resp.status_code == 200
         html = resp.text
         # The prebuilt HTML should reference the prefixed API URL
-        assert "/aura/api" in html
+        assert "/amiss/api" in html
 
     def test_html_landing_no_prefix_in_default(self, test_app):
         """Without ROOT_PATH, the HTML should not contain path prefix references."""
@@ -160,10 +160,10 @@ class TestRootPathImageUrls:
         assert len(static_srcs) > 0
         for src in static_srcs:
             assert src.startswith("/static/")
-            assert not src.startswith("/aura/static/")
+            assert not src.startswith("/amiss/static/")
 
     def test_home_images_with_root_path(self, app_with_root_path):
-        """With ROOT_PATH, image src paths start with /aura/static/."""
+        """With ROOT_PATH, image src paths start with /amiss/static/."""
         client = TestClient(app_with_root_path)
         resp = client.get("/api/")
         assert resp.status_code == 200
@@ -171,7 +171,7 @@ class TestRootPathImageUrls:
         static_srcs = [s for s in srcs if "/static/" in s]
         assert len(static_srcs) > 0
         for src in static_srcs:
-            assert src.startswith("/aura/static/")
+            assert src.startswith("/amiss/static/")
 
 
 class TestRootPathFormUrls:
@@ -184,16 +184,16 @@ class TestRootPathFormUrls:
         submit_urls = find_values(data, "submitUrl")
         assert any("/api/reservations/create" in u for u in submit_urls)
         for u in submit_urls:
-            assert not u.startswith("/aura/")
+            assert not u.startswith("/amiss/")
 
     def test_reservation_form_urls_with_root_path(self, app_with_root_path):
-        """With ROOT_PATH, form submit URLs are prefixed with /aura."""
+        """With ROOT_PATH, form submit URLs are prefixed with /amiss."""
         client = TestClient(app_with_root_path)
         resp = client.get("/api/reservations/new")
         assert resp.status_code == 200
         data = resp.json()
         submit_urls = find_values(data, "submitUrl")
-        assert any("/aura/api/reservations/create" in u for u in submit_urls)
+        assert any("/amiss/api/reservations/create" in u for u in submit_urls)
 
     def test_search_urls_without_root_path(self, test_app):
         """Without ROOT_PATH, search URLs start with /api/."""
@@ -202,7 +202,7 @@ class TestRootPathFormUrls:
         assert resp.status_code == 200
         body = resp.text
         assert "/api/reservations/endpoints" in body
-        assert "/aura/api/reservations/endpoints" not in body
+        assert "/amiss/api/reservations/endpoints" not in body
 
 
 class TestRootPathFieldGenerators:
@@ -214,21 +214,21 @@ class TestRootPathFieldGenerators:
     """
 
     def test_stp_field_search_url_with_root_path(self):
-        from aura.frontend.reservations import generate_stp_field
-        from aura.settings import settings
+        from amiss.frontend.reservations import generate_stp_field
+        from amiss.settings import settings
 
         original = settings.ROOT_PATH
         try:
-            settings.ROOT_PATH = "/aura"
+            settings.ROOT_PATH = "/amiss"
             field = generate_stp_field("test")
             search_url = field.json_schema_extra["search_url"]
-            assert search_url == "/aura/api/reservations/endpoints"
+            assert search_url == "/amiss/api/reservations/endpoints"
         finally:
             settings.ROOT_PATH = original
 
     def test_stp_field_search_url_without_root_path(self):
-        from aura.frontend.reservations import generate_stp_field
-        from aura.settings import settings
+        from amiss.frontend.reservations import generate_stp_field
+        from amiss.settings import settings
 
         original = settings.ROOT_PATH
         try:
@@ -240,21 +240,21 @@ class TestRootPathFieldGenerators:
             settings.ROOT_PATH = original
 
     def test_sdp_field_search_url_with_root_path(self):
-        from aura.frontend.reservations import generate_sdp_field
-        from aura.settings import settings
+        from amiss.frontend.reservations import generate_sdp_field
+        from amiss.settings import settings
 
         original = settings.ROOT_PATH
         try:
-            settings.ROOT_PATH = "/aura"
+            settings.ROOT_PATH = "/amiss"
             field = generate_sdp_field("test")
             search_url = field.json_schema_extra["search_url"]
-            assert search_url == "/aura/api/reservations/demarcation_points"
+            assert search_url == "/amiss/api/reservations/demarcation_points"
         finally:
             settings.ROOT_PATH = original
 
     def test_sdp_field_search_url_without_root_path(self):
-        from aura.frontend.reservations import generate_sdp_field
-        from aura.settings import settings
+        from amiss.frontend.reservations import generate_sdp_field
+        from amiss.settings import settings
 
         original = settings.ROOT_PATH
         try:

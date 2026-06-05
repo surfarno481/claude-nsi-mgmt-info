@@ -12,18 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for aura.log: DatabaseLogHandler and UvicornAccessLogFilter."""
+"""Tests for amiss.log: DatabaseLogHandler and UvicornAccessLogFilter."""
 
 from logging import LogRecord
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from aura.log import DatabaseLogHandler, UvicornAccessLogFilter
+from amiss.log import DatabaseLogHandler, UvicornAccessLogFilter
 
 
 class TestDatabaseLogHandler:
-    @patch("aura.log.Session")
+    @patch("amiss.log.Session")
     def test_emit_with_reservationId(self, mock_session_cls):
         handler = DatabaseLogHandler()
         record = LogRecord("test", 20, "test.py", 1, None, (), None)
@@ -36,7 +36,7 @@ class TestDatabaseLogHandler:
         handler.emit(record)
         mock_session.add.assert_called_once()
 
-    @patch("aura.log.Session")
+    @patch("amiss.log.Session")
     def test_emit_without_structlog_dict_skips(self, mock_session_cls):
         handler = DatabaseLogHandler()
         record = LogRecord("test", 20, "test.py", 1, "plain string message", (), None)
@@ -48,7 +48,7 @@ class TestDatabaseLogHandler:
         handler.emit(record)
         mock_session.add.assert_not_called()
 
-    @patch("aura.log.Session")
+    @patch("amiss.log.Session")
     def test_emit_with_no_matching_id_sets_negative(self, mock_session_cls):
         handler = DatabaseLogHandler()
         record = LogRecord("test", 20, "test.py", 1, None, (), None)
@@ -62,7 +62,7 @@ class TestDatabaseLogHandler:
         # reservationId is -1, so add should not be called (reservationId < 0)
         mock_session.add.assert_not_called()
 
-    @patch("aura.log.Session")
+    @patch("amiss.log.Session")
     def test_emit_with_connectionId_queries_db(self, mock_session_cls):
         handler = DatabaseLogHandler()
         record = LogRecord("test", 20, "test.py", 1, None, (), None)
@@ -77,7 +77,7 @@ class TestDatabaseLogHandler:
         mock_session.query.assert_called_once()
         mock_session.add.assert_called_once()
 
-    @patch("aura.log.Session")
+    @patch("amiss.log.Session")
     def test_emit_with_globalReservationId_queries_db(self, mock_session_cls):
         handler = DatabaseLogHandler()
         record = LogRecord("test", 20, "test.py", 1, None, (), None)
@@ -92,7 +92,7 @@ class TestDatabaseLogHandler:
         mock_session.query.assert_called_once()
         mock_session.add.assert_called_once()
 
-    @patch("aura.log.Session")
+    @patch("amiss.log.Session")
     def test_emit_with_correlationId_queries_db(self, mock_session_cls):
         handler = DatabaseLogHandler()
         record = LogRecord("test", 20, "test.py", 1, None, (), None)
@@ -107,7 +107,7 @@ class TestDatabaseLogHandler:
         mock_session.query.assert_called_once()
         mock_session.add.assert_called_once()
 
-    @patch("aura.log.Session")
+    @patch("amiss.log.Session")
     def test_emit_with_connectionId_none_string_skips_lookup(self, mock_session_cls):
         handler = DatabaseLogHandler()
         record = LogRecord("test", 20, "test.py", 1, None, (), None)
@@ -121,7 +121,7 @@ class TestDatabaseLogHandler:
         # connectionId == "None" is explicitly skipped, falls through to reservationId = -1
         mock_session.add.assert_not_called()
 
-    @patch("aura.log.Session")
+    @patch("amiss.log.Session")
     def test_emit_with_connectionId_not_found_raises(self, mock_session_cls):
         handler = DatabaseLogHandler()
         record = LogRecord("test", 20, "test.py", 1, None, (), None)

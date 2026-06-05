@@ -17,8 +17,8 @@ from fastui import AnyComponent, FastUI
 from fastui import components as c
 from fastui.events import GoToEvent
 
-from aura.frontend.util import app_page
-from aura.settings import settings
+from amiss.frontend.util import app_page
+from amiss.settings import settings
 
 router = APIRouter()
 

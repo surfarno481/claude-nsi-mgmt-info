@@ -1,4 +1,4 @@
-# Default values for nsi-aura.
+# Default values for nsi-mgmt-info.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
@@ -7,7 +7,7 @@ replicaCount: 1
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:
-  repository: ghcr.io/workfloworchestrator/nsi-aura
+  repository: ghcr.io/workfloworchestrator/nsi-mgmt-info
   # This sets the pull policy for images.
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
@@ -19,16 +19,18 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
-# Configmap with nsi-aura environment variables mounted into the pod
-#env:
-#  SITE_TITLE: "AuRA - Demo"
-#  NSI_AURA_HOST: "0.0.0.0"
-#  NSI_AURA_PORT: "8080"
-#  NSI_AURA_CERTIFICATE: "aura-certificate.pem"
-#  NSI_AURA_PRIVATE_KEY: "aura-private-key.pem"
+# Configmap with nsi-mgmt-info environment variables mounted into the pod
+env:
+  # Path prefix the app is served at behind the reverse-proxy portal (see ROOT_PATH design)
+  ROOT_PATH: "/amiss"
+#  SITE_TITLE: "AMISS - Demo"
+#  NSI_AMISS_HOST: "0.0.0.0"
+#  NSI_AMISS_PORT: "8080"
+#  NSI_AMISS_CERTIFICATE: "amiss-certificate.pem"
+#  NSI_AMISS_PRIVATE_KEY: "amiss-private-key.pem"
 #  CERTIFICATES_DIRECTORY: 
 #  VERIFY_REQUESTS: "True"
-#  DATABASE_URI: "sqlite:///db/aura.db"
+#  DATABASE_URI: "sqlite:///db/amiss.db"
 #  STATIC_DIRECTORY: "static"
 #  NSA_SCHEME: "http"
 #  NSA_HOST: "localhost"

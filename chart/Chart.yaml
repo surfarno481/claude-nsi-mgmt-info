@@ -1,6 +1,6 @@
 apiVersion: v2
-name: nsi-aura
-description: NSI-AuRA, the NSI uPA for the ANA
+name: nsi-mgmt-info
+description: AMISS, the NSI Management Information Service for the ANA
 
 # A chart can be either an 'application' or a 'library' chart.
 #

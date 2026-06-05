@@ -125,7 +125,7 @@ class Log(SQLModel, table=True):
     message: str
 
 #
-# In-memory cf. AuRA 0.1
+# In-memory cf. AMISS 0.1
 #
 class Segment(BaseModel):
     """Segment in a NSI P2P circuit, as defined in Aggregator-Proxy API:

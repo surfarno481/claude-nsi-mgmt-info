@@ -14,7 +14,7 @@
 
 """Sample topology data for DDS tests.
 
-Extracted from aura/dds.py __main__ block.
+Extracted from amiss/dds.py __main__ block.
 """
 
 MOXY_TOPOLOGY = {

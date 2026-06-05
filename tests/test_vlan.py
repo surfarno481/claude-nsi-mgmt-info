@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for aura.vlan: VlanRanges class and DB-dependent functions."""
+"""Tests for amiss.vlan: VlanRanges class and DB-dependent functions."""
 
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from aura.vlan import VlanRanges
+from amiss.vlan import VlanRanges
 
 
 class TestVlanRangesConstructor:
@@ -172,9 +172,9 @@ class TestVlanRangesDunderMethods:
 
 
 class TestVlanRangesDbFunctions:
-    @patch("aura.vlan.Session")
+    @patch("amiss.vlan.Session")
     def test_all_vlan_ranges(self, mock_session_cls):
-        from aura.vlan import all_vlan_ranges
+        from amiss.vlan import all_vlan_ranges
 
         mock_session = MagicMock()
         mock_session_cls.return_value.__enter__ = MagicMock(return_value=mock_session)
@@ -184,9 +184,9 @@ class TestVlanRangesDbFunctions:
         result = all_vlan_ranges(1)
         assert result == VlanRanges("100-200")
 
-    @patch("aura.vlan.Session")
+    @patch("amiss.vlan.Session")
     def test_in_use_vlan_ranges(self, mock_session_cls):
-        from aura.vlan import in_use_vlan_ranges
+        from amiss.vlan import in_use_vlan_ranges
 
         mock_session = MagicMock()
         mock_session_cls.return_value.__enter__ = MagicMock(return_value=mock_session)
@@ -196,11 +196,11 @@ class TestVlanRangesDbFunctions:
         result = in_use_vlan_ranges(1)
         assert result == VlanRanges([100, 101])
 
-    @patch("aura.vlan.free_vlan_ranges.__module__", new="aura.vlan")
-    @patch("aura.vlan.in_use_vlan_ranges")
-    @patch("aura.vlan.all_vlan_ranges")
+    @patch("amiss.vlan.free_vlan_ranges.__module__", new="amiss.vlan")
+    @patch("amiss.vlan.in_use_vlan_ranges")
+    @patch("amiss.vlan.all_vlan_ranges")
     def test_free_vlan_ranges(self, mock_all, mock_in_use):
-        from aura.vlan import free_vlan_ranges
+        from amiss.vlan import free_vlan_ranges
 
         mock_all.return_value = VlanRanges("100-110")
         mock_in_use.return_value = VlanRanges([105])

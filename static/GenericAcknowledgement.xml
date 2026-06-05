@@ -4,7 +4,7 @@
     <nsi_headers:nsiHeader xmlns:nsi_headers="http://schemas.ogf.org/nsi/2013/12/framework/headers">
       <protocolVersion>application/vnd.ogf.nsi.cs.v2.requester+soap</protocolVersion>
       <correlationId>#CORRELATION-ID#</correlationId>
-      <requesterNSA>urn:ogf:network:anaeng.global:2024:nsa:nsi-aura</requesterNSA>
+      <requesterNSA>urn:ogf:network:anaeng.global:2024:nsa:nsi-mgmt-info</requesterNSA>
       <providerNSA>#PROVIDER-NSA-ID#</providerNSA>
     </nsi_headers:nsiHeader>
   </soapenv:Header>

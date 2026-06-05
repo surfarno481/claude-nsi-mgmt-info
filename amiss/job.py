@@ -19,12 +19,12 @@ from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.schedulers.background import BackgroundScheduler
 from pytz import utc
 
-from aura.db import Session
-from aura.dds import TOPOLOGY_MIME_TYPE, get_dds_documents, topology_to_stps, update_sdps, update_stps
-from aura.agg import segdicts_to_segments, get_aggregator_reservations
-from aura.fsm import ConnectionStateMachine
-from aura.model import STP, Reservation
-from aura.nsi import (
+from amiss.db import Session
+from amiss.dds import TOPOLOGY_MIME_TYPE, get_dds_documents, topology_to_stps, update_sdps, update_stps
+from amiss.agg import segdicts_to_segments, get_aggregator_reservations
+from amiss.fsm import ConnectionStateMachine
+from amiss.model import STP, Reservation
+from amiss.nsi import (
     nsi_send_provision,
     nsi_send_release,
     nsi_send_reserve,
@@ -32,7 +32,7 @@ from aura.nsi import (
     nsi_send_terminate,
     nsi_xml_to_dict, nsi_util_get_json,
 )
-from aura.settings import settings
+from amiss.settings import settings
 
 # Advanced Python Scheduler
 # scheduler = AsyncIOScheduler(event_loop=asyncio.get_running_loop(), timezone=utc)

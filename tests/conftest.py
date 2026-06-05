@@ -18,10 +18,10 @@ import logging
 import os
 from pathlib import Path
 
-# Must set DATABASE_URI and create dummy PEM files before any aura module imports
+# Must set DATABASE_URI and create dummy PEM files before any amiss module imports
 # trigger settings/db initialization (Settings validates FilePath at import time)
 os.environ["DATABASE_URI"] = "sqlite://"
-for _pem in ("aura-certificate.pem", "aura-private-key.pem"):
+for _pem in ("amiss-certificate.pem", "amiss-private-key.pem"):
     Path(_pem).touch(exist_ok=True)
 
 from datetime import datetime, timezone
@@ -31,8 +31,8 @@ import pytest
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session as SQLModelSession, SQLModel, create_engine
 
-from aura.log import DatabaseLogHandler
-from aura.model import SDP, STP, Reservation
+from amiss.log import DatabaseLogHandler
+from amiss.model import SDP, STP, Reservation
 
 
 def _disable_database_log_handler():

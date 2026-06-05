@@ -12,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for aura.frontend.util: to_aura_connection_state and reservation_buttons."""
+"""Tests for amiss.frontend.util: to_amiss_connection_state and reservation_buttons."""
 
 import pytest
 
-from aura.frontend.util import to_aura_connection_state
+from amiss.frontend.util import to_amiss_connection_state
 
 
-class TestToAuraConnectionState:
-    """Test all branches of to_aura_connection_state mapping."""
+class TestToAmissConnectionState:
+    """Test all branches of to_amiss_connection_state mapping."""
 
     @pytest.mark.parametrize(
         "nsi_states,expected",
@@ -191,7 +191,7 @@ class TestToAuraConnectionState:
         ],
     )
     def test_mapping(self, nsi_states, expected):
-        assert to_aura_connection_state(nsi_states) == expected
+        assert to_amiss_connection_state(nsi_states) == expected
 
 
 class TestReservationButtons:
@@ -263,7 +263,7 @@ class TestReservationButtons:
         ],
     )
     def test_buttons_per_state(self, state, expected_buttons, absent_buttons, reservation_factory):
-        from aura.frontend.util import reservation_buttons
+        from amiss.frontend.util import reservation_buttons
 
         reservation = reservation_factory(state=state)
         div = reservation_buttons(reservation)

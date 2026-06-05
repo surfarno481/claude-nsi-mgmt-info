@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for aura.nsi: XML generation, parsing, and content type validation."""
+"""Tests for amiss.nsi: XML generation, parsing, and content type validation."""
 
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 import pytest
 
-from aura.nsi import (
+from amiss.nsi import (
     acknowledgement_template,
     content_type_is_valid_soap,
     generate_acknowledgement_xml,

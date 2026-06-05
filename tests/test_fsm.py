@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for aura.fsm: ConnectionStateMachine transitions."""
+"""Tests for amiss.fsm: ConnectionStateMachine transitions."""
 
 import pytest
 from statemachine.exceptions import TransitionNotAllowed
 
-from aura.fsm import ConnectionStateMachine
+from amiss.fsm import ConnectionStateMachine
 
 
 VALID_TRANSITIONS = [

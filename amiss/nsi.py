@@ -23,8 +23,8 @@ from lxml import etree
 from pydantic import HttpUrl
 from urllib3.util.retry import Retry
 
-from aura.model import STP, Reservation
-from aura.settings import settings
+from amiss.model import STP, Reservation
+from amiss.settings import settings
 
 logger = structlog.get_logger(__name__)
 
@@ -592,7 +592,7 @@ def nsi_util_get_xml(url: HttpUrl) -> bytes | None:
         r = session.get(
             str(url),
             verify=settings.verify,
-            cert=(str(settings.NSI_AURA_CERTIFICATE), str(settings.NSI_AURA_PRIVATE_KEY)),
+            cert=(str(settings.NSI_AMISS_CERTIFICATE), str(settings.NSI_AMISS_PRIVATE_KEY)),
         )
     except requests.exceptions.ConnectionError as e:
         log.warning("cannot get XML document", url=str(url), error=str(e))
@@ -639,7 +639,7 @@ def nsi_util_get_json(url: HttpUrl, queryparams:dict) -> bytes | None:
         r = session.get(
             fullurl,
             verify=settings.verify,
-            cert=(str(settings.NSI_AURA_CERTIFICATE), str(settings.NSI_AURA_PRIVATE_KEY)),
+            cert=(str(settings.NSI_AMISS_CERTIFICATE), str(settings.NSI_AMISS_PRIVATE_KEY)),
         )
     except requests.exceptions.ConnectionError as e:
         log.warning("cannot get JSON document", url=str(url), error=str(e))
@@ -677,7 +677,7 @@ def nsi_util_get_json(url: HttpUrl, queryparams:dict) -> bytes | None:
 #                                                              'order': '0'}}},
 #                           'protocolVersion': 'application/vnd.ogf.nsi.cs.v2.requester+soap',
 #                           'providerNSA': 'urn:ogf:network:ana.dlp.surfnet.nl:2024:nsa:safnari',
-#                           'requesterNSA': 'urn:ogf:network:anaeng.global:2024:nsa:nsi-aura'}},
+#                           'requesterNSA': 'urn:ogf:network:anaeng.global:2024:nsa:nsi-mgmt-info'}},
 #  'Body': {'reserveConfirmed': {'connectionId': UUID('1153d8ed-f97b-4f01-b529-af8080980ea9'),
 #                                'criteria': {'p2ps': {'capacity': '1000',
 #                                                      'destSTP': 'urn:ogf:network:moxy.ana.dlp.surfnet.nl:2024:ana-moxy:research-1?vlan=147',
@@ -693,13 +693,13 @@ def nsi_util_get_json(url: HttpUrl, queryparams:dict) -> bytes | None:
 # {'Header': {'nsiHeader': {'correlationId': UUID('4ab41cb2-8b04-4ba9-9c68-e736b9091b2e'),
 #                           'protocolVersion': 'application/vnd.ogf.nsi.cs.v2.requester+soap',
 #                           'providerNSA': 'urn:ogf:network:ana.dlp.surfnet.nl:2024:nsa:safnari',
-#                           'requesterNSA': 'urn:ogf:network:anaeng.global:2024:nsa:nsi-aura'}},
+#                           'requesterNSA': 'urn:ogf:network:anaeng.global:2024:nsa:nsi-mgmt-info'}},
 #  'Body': {'reserveCommitConfirmed': {'connectionId': UUID('1153d8ed-f97b-4f01-b529-af8080980ea9')}}}
 #
 #
 # {'Header': {'nsiHeader': {'protocolVersion': 'application/vnd.ogf.nsi.cs.v2.requester+soap',
 #                           'correlationId': UUID('620d1ce7-bce5-48f9-b12f-c6e7c42e2054'),
-#                           'requesterNSA': 'urn:ogf:network:anaeng.global:2024:nsa:nsi-aura',
+#                           'requesterNSA': 'urn:ogf:network:anaeng.global:2024:nsa:nsi-mgmt-info',
 #                           'providerNSA': 'urn:ogf:network:ana.dlp.surfnet.nl:2024:nsa:safnari'}},
 #  'Body': {'reserveFailed': {'connectionId': UUID('6572756a-141c-4179-bd58-94abdd93589e'),
 #                             'connectionStates': {'reservationState': 'ReserveFailed',
@@ -726,7 +726,7 @@ def nsi_util_get_json(url: HttpUrl, queryparams:dict) -> bytes | None:
 #
 # {'Header': {'nsiHeader': {'protocolVersion': 'application/vnd.ogf.nsi.cs.v2.provider+soap',
 #                           'correlationId': UUID('53100ae8-3544-434d-8f42-ea0e1f0951d8'),
-#                           'requesterNSA': 'urn:ogf:network:anaeng.global:2024:nsa:nsi-aura',
+#                           'requesterNSA': 'urn:ogf:network:anaeng.global:2024:nsa:nsi-mgmt-info',
 #                           'providerNSA': 'urn:ogf:network:ana.dlp.surfnet.nl:2024:nsa:safnari'}},
 #  'Body': {'Fault': {'faultcode': 'soapenv:Server',
 #                     'faultstring': 'Connection state machine is in invalid state for received message',
@@ -739,7 +739,7 @@ def nsi_util_get_json(url: HttpUrl, queryparams:dict) -> bytes | None:
 #
 # {'Header': {'nsiHeader': {'protocolVersion': 'application/vnd.ogf.nsi.cs.v2.requester+soap',
 #                           'correlationId': UUID('2e4cb8d7-41f8-4133-aab5-59369f42b088'),
-#                           'requesterNSA': 'urn:ogf:network:anaeng.global:2024:nsa:nsi-aura',
+#                           'requesterNSA': 'urn:ogf:network:anaeng.global:2024:nsa:nsi-mgmt-info',
 #                           'providerNSA': 'urn:ogf:network:ana.dlp.surfnet.nl:2024:nsa:safnari'}},
 #  'Body': {'errorEvent': {'connectionId': UUID('0e092969-c8f7-4f2f-b115-6271fd5a87f7'),
 #                          'notificationId': '1',
@@ -764,7 +764,7 @@ def nsi_util_get_json(url: HttpUrl, queryparams:dict) -> bytes | None:
 #
 # {'Header': {'nsiHeader': {'protocolVersion': 'application/vnd.ogf.nsi.cs.v2.requester+soap',
 #                           'correlationId': UUID('5f4f77fe-22cf-4a5e-aecf-d4b7dd291c50'),
-#                           'requesterNSA': 'urn:ogf:network:anaeng.global:2024:nsa:nsi-aura',
+#                           'requesterNSA': 'urn:ogf:network:anaeng.global:2024:nsa:nsi-mgmt-info',
 #                           'providerNSA': 'urn:ogf:network:ana.dlp.surfnet.nl:2024:nsa:safnari'}},
 #  'Body': {'dataPlaneStateChange': {'connectionId': UUID('8c5bac21-336e-47b0-8479-1c7e3fba21d1'),
 #                                    'notificationId': '1',
@@ -810,11 +810,11 @@ def nsi_util_get_json(url: HttpUrl, queryparams:dict) -> bytes | None:
 #                                                                      'version': '1'},
 #                                                         'description': 'test '
 #                                                                        '001',
-#                                                         'requesterNSA': 'urn:ogf:network:anaeng.global:2024:nsa:nsi-aura'}}},
+#                                                         'requesterNSA': 'urn:ogf:network:anaeng.global:2024:nsa:nsi-mgmt-info'}}},
 #  'Header': {'nsiHeader': {'correlationId': UUID('d665fb22-2ffc-499d-b2b4-9804f3becb4c'),
 #                           'protocolVersion': 'application/vnd.ogf.nsi.cs.v2.provider+soap',
 #                           'providerNSA': 'urn:ogf:network:ana.dlp.surfnet.nl:2024:nsa:safnari',
-#                           'requesterNSA': 'urn:ogf:network:anaeng.global:2024:nsa:nsi-aura'}}}
+#                           'requesterNSA': 'urn:ogf:network:anaeng.global:2024:nsa:nsi-mgmt-info'}}}
 
 
 def nsi_util_element_to_dict(node: Any, attributes: bool = True) -> dict[str, Any]:
@@ -881,7 +881,7 @@ def nsi_util_post_soap(url: HttpUrl, soapreqmsg: bytes) -> bytes:
             data=body,
             headers=headers,
             verify=settings.verify,
-            cert=(str(settings.NSI_AURA_CERTIFICATE), str(settings.NSI_AURA_PRIVATE_KEY)),
+            cert=(str(settings.NSI_AMISS_CERTIFICATE), str(settings.NSI_AMISS_PRIVATE_KEY)),
         )
     except requests.exceptions.ConnectionError as e:
         log.warning("cannot get XML document", url=str(url), error=str(e))

@@ -20,6 +20,6 @@ import pytest
 @pytest.fixture()
 def test_app():
     """Create the FastAPI app for testing."""
-    from aura import app
+    from amiss import app
 
     return app

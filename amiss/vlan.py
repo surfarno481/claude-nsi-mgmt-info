@@ -22,10 +22,10 @@ from typing import AbstractSet, Any, Iterable, Iterator, List, Optional, Sequenc
 
 from sqlalchemy import Select, select
 
-from aura.db import Session
-from aura.fsm import ConnectionStateMachine
-from aura.functional import expand_ranges, to_ranges
-from aura.model import STP, Reservation
+from amiss.db import Session
+from amiss.fsm import ConnectionStateMachine
+from amiss.functional import expand_ranges, to_ranges
+from amiss.model import STP, Reservation
 
 
 @total_ordering

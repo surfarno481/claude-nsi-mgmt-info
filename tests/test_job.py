@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for aura.job: Job functions (mocked DB and HTTP)."""
+"""Tests for amiss.job: Job functions (mocked DB and HTTP)."""
 
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
@@ -21,9 +21,9 @@ import pytest
 
 
 class TestNewCorrelationIdOnReservation:
-    @patch("aura.job.Session")
+    @patch("amiss.job.Session")
     def test_updates_correlationId(self, mock_session_cls):
-        from aura.job import new_correlation_id_on_reservation
+        from amiss.job import new_correlation_id_on_reservation
 
         mock_reservation = MagicMock()
         mock_reservation.correlationId = uuid4()
@@ -39,15 +39,15 @@ class TestNewCorrelationIdOnReservation:
 
 
 class TestNsiPollDdsJob:
-    @patch("aura.job.update_sdps")
-    @patch("aura.job.update_stps")
-    @patch("aura.job.topology_to_stps")
-    @patch("aura.job.nsi_xml_to_dict")
-    @patch("aura.job.get_dds_documents")
+    @patch("amiss.job.update_sdps")
+    @patch("amiss.job.update_stps")
+    @patch("amiss.job.topology_to_stps")
+    @patch("amiss.job.nsi_xml_to_dict")
+    @patch("amiss.job.get_dds_documents")
     def test_calls_update_functions(
         self, mock_get_dds, mock_xml_to_dict, mock_topo_to_stps, mock_update_stps, mock_update_sdps
     ):
-        from aura.job import TOPOLOGY_MIME_TYPE, nsi_poll_dds_job
+        from amiss.job import TOPOLOGY_MIME_TYPE, nsi_poll_dds_job
 
         mock_get_dds.return_value = {TOPOLOGY_MIME_TYPE: {"topo1": b"<xml/>"}}
         mock_xml_to_dict.return_value = {"id": "test"}
@@ -61,11 +61,11 @@ class TestNsiPollDdsJob:
 
 
 class TestNsiSendReserveJob:
-    @patch("aura.job.nsi_send_reserve")
-    @patch("aura.job.new_correlation_id_on_reservation")
-    @patch("aura.job.Session")
+    @patch("amiss.job.nsi_send_reserve")
+    @patch("amiss.job.new_correlation_id_on_reservation")
+    @patch("amiss.job.Session")
     def test_successful_reserve_sets_connectionId(self, mock_session_cls, mock_new_corr, mock_nsi_send):
-        from aura.job import nsi_send_reserve_job
+        from amiss.job import nsi_send_reserve_job
 
         conn_id = str(uuid4())
         mock_reservation = MagicMock(id=1, connectionId=None)
@@ -87,11 +87,11 @@ class TestNsiSendReserveJob:
 
         mock_nsi_send.assert_called_once()
 
-    @patch("aura.job.nsi_send_reserve")
-    @patch("aura.job.new_correlation_id_on_reservation")
-    @patch("aura.job.Session")
+    @patch("amiss.job.nsi_send_reserve")
+    @patch("amiss.job.new_correlation_id_on_reservation")
+    @patch("amiss.job.Session")
     def test_connection_error_triggers_error_transition(self, mock_session_cls, mock_new_corr, mock_nsi_send):
-        from aura.job import nsi_send_reserve_job
+        from amiss.job import nsi_send_reserve_job
 
         mock_reservation = MagicMock(
             id=1,
@@ -116,11 +116,11 @@ class TestNsiSendReserveJob:
 
 
 class TestNsiSendTerminateJob:
-    @patch("aura.job.nsi_send_terminate")
-    @patch("aura.job.new_correlation_id_on_reservation")
-    @patch("aura.job.Session")
+    @patch("amiss.job.nsi_send_terminate")
+    @patch("amiss.job.new_correlation_id_on_reservation")
+    @patch("amiss.job.Session")
     def test_successful_terminate(self, mock_session_cls, mock_new_corr, mock_nsi_send):
-        from aura.job import nsi_send_terminate_job
+        from amiss.job import nsi_send_terminate_job
 
         mock_reservation = MagicMock(id=1, correlationId=uuid4(), connectionId=uuid4())
 
@@ -134,11 +134,11 @@ class TestNsiSendTerminateJob:
         nsi_send_terminate_job(1)
         mock_nsi_send.assert_called_once()
 
-    @patch("aura.job.nsi_send_terminate")
-    @patch("aura.job.new_correlation_id_on_reservation")
-    @patch("aura.job.Session")
+    @patch("amiss.job.nsi_send_terminate")
+    @patch("amiss.job.new_correlation_id_on_reservation")
+    @patch("amiss.job.Session")
     def test_terminate_fault_logs_warning(self, mock_session_cls, mock_new_corr, mock_nsi_send):
-        from aura.job import nsi_send_terminate_job
+        from amiss.job import nsi_send_terminate_job
 
         mock_reservation = MagicMock(id=1, correlationId=uuid4(), connectionId=uuid4())
 
@@ -166,11 +166,11 @@ class TestNsiSendTerminateJob:
 
 
 class TestNsiSendReserveCommitJob:
-    @patch("aura.job.nsi_send_reserve_commit")
-    @patch("aura.job.new_correlation_id_on_reservation")
-    @patch("aura.job.Session")
+    @patch("amiss.job.nsi_send_reserve_commit")
+    @patch("amiss.job.new_correlation_id_on_reservation")
+    @patch("amiss.job.Session")
     def test_successful_reserve_commit(self, mock_session_cls, mock_new_corr, mock_nsi_send):
-        from aura.job import nsi_send_reserve_commit_job
+        from amiss.job import nsi_send_reserve_commit_job
 
         mock_reservation = MagicMock(id=1, correlationId=uuid4(), connectionId=uuid4())
 
@@ -186,11 +186,11 @@ class TestNsiSendReserveCommitJob:
 
 
 class TestNsiSendProvisionJob:
-    @patch("aura.job.nsi_send_provision")
-    @patch("aura.job.new_correlation_id_on_reservation")
-    @patch("aura.job.Session")
+    @patch("amiss.job.nsi_send_provision")
+    @patch("amiss.job.new_correlation_id_on_reservation")
+    @patch("amiss.job.Session")
     def test_successful_provision(self, mock_session_cls, mock_new_corr, mock_nsi_send):
-        from aura.job import nsi_send_provision_job
+        from amiss.job import nsi_send_provision_job
 
         mock_reservation = MagicMock(id=1, correlationId=uuid4(), connectionId=uuid4())
 
@@ -206,11 +206,11 @@ class TestNsiSendProvisionJob:
 
 
 class TestNsiSendReleaseJob:
-    @patch("aura.job.nsi_send_release")
-    @patch("aura.job.new_correlation_id_on_reservation")
-    @patch("aura.job.Session")
+    @patch("amiss.job.nsi_send_release")
+    @patch("amiss.job.new_correlation_id_on_reservation")
+    @patch("amiss.job.Session")
     def test_successful_release(self, mock_session_cls, mock_new_corr, mock_nsi_send):
-        from aura.job import nsi_send_release_job
+        from amiss.job import nsi_send_release_job
 
         mock_reservation = MagicMock(id=1, correlationId=uuid4(), connectionId=uuid4())
 
@@ -224,11 +224,11 @@ class TestNsiSendReleaseJob:
         nsi_send_release_job(1)
         mock_nsi_send.assert_called_once()
 
-    @patch("aura.job.nsi_send_release")
-    @patch("aura.job.new_correlation_id_on_reservation")
-    @patch("aura.job.Session")
+    @patch("amiss.job.nsi_send_release")
+    @patch("amiss.job.new_correlation_id_on_reservation")
+    @patch("amiss.job.Session")
     def test_release_fault_handled_gracefully(self, mock_session_cls, mock_new_corr, mock_nsi_send):
-        from aura.job import nsi_send_release_job
+        from amiss.job import nsi_send_release_job
 
         mock_reservation = MagicMock(id=1, correlationId=uuid4(), connectionId=uuid4())
 

@@ -16,11 +16,11 @@ import structlog
 from fastapi import APIRouter, Request, Response
 from statemachine.exceptions import TransitionNotAllowed
 
-from aura.fsm import ConnectionStateMachine
-from aura.job import nsi_send_reserve_commit_job, scheduler
-from aura.model import Reservation
-from aura.nsi import acknowledgement_template, generate_acknowledgement_xml, nsi_xml_to_dict
-from aura.settings import settings
+from amiss.fsm import ConnectionStateMachine
+from amiss.job import nsi_send_reserve_commit_job, scheduler
+from amiss.model import Reservation
+from amiss.nsi import acknowledgement_template, generate_acknowledgement_xml, nsi_xml_to_dict
+from amiss.settings import settings
 
 router = APIRouter()
 
@@ -35,7 +35,7 @@ def soap_action(request: Request, action: str) -> bool:
 @router.post("/callback/")
 async def nsi_callback(request: Request) -> Response:
     """Receive and process NSI async callback."""
-    from aura.db import Session
+    from amiss.db import Session
 
     body = nsi_xml_to_dict(await request.body())
     with Session.begin() as session:

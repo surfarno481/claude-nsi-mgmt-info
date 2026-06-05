@@ -11,18 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# Arno TODO:
-# * Retrieve Spans for all or a given Reservation from Aggregator Proxy, and store in DB
-# * Or: Live Retrieve Spans for all reservations, figure out which reservations use the same spectrum, show in spectrum detail view.
-#
-# Use https://github.com/workfloworchestrator/nsi-aggregator-proxy#get-reservationsconnectionid
-# with the "detail" parameter set to "full".
-#
-# Refactor:
-# * Talk to DDS-Proxy instead of DDS directly to get STP and SDP.
-# *
-
 from typing import Annotated
 
 from fastapi import APIRouter
@@ -33,111 +21,117 @@ from fastui.events import GoToEvent
 from fastui.forms import fastui_form
 from pydantic import BaseModel, Field
 
-from aura.db import Session
-from aura.frontend.util import app_page, button_row, spectrum_table, segment_table
-from aura.model import SDP, global_segments
+from amiss.db import Session
+from amiss.frontend.util import app_page, button_row, sdp_table
+from amiss.model import SDP
 
 router = APIRouter()
 
 
 @router.get("", response_model=FastUI, response_model_exclude_none=True)
-async def spectrum() -> list[AnyComponent]:
-    """Redirect to active tab of spectrum page."""
-    return [c.FireEvent(event=GoToEvent(url="/spectrum/active"))]
+async def sdp() -> list[AnyComponent]:
+    """Redirect to active tab of sdp page."""
+    return [c.FireEvent(event=GoToEvent(url="/sdp/active"))]
 
 
 @router.get("/active", response_model=FastUI, response_model_exclude_none=True)
-def spectrum_active() -> list[AnyComponent]:
+def sdp_active() -> list[AnyComponent]:
     """Display all active SDP in a table."""
     with Session() as session:
         sdps = session.query(SDP).filter(SDP.active).order_by(SDP.id).all()
     return app_page(
         *tabs(),
-        spectrum_table(sdps),
-        title="Active Spectra",
+        sdp_table(sdps),
+        title="Active Service Demarcation Points",
     )
 
 
 @router.get("/inactive", response_model=FastUI, response_model_exclude_none=True)
-def spectrum_inactive() -> list[AnyComponent]:
+def sdp_inactive() -> list[AnyComponent]:
     """Display all inactive SDP in a table."""
     with Session() as session:
         sdps = session.query(SDP).filter(not SDP.active).order_by(SDP.id).all()
     return app_page(
         *tabs(),
-        spectrum_table(sdps),
-        title="Inactive Spectra",
+        sdp_table(sdps),
+        title="Inctive Service Demarcation Points",
     )
 
 
 @router.get("/all", response_model=FastUI, response_model_exclude_none=True)
-def spectrum_all() -> list[AnyComponent]:
+def sdp_all() -> list[AnyComponent]:
     """Display all SDP in a table."""
     with Session() as session:
         sdps = session.query(SDP).order_by(SDP.id).all()
     return app_page(
         *tabs(),
-        spectrum_table(sdps),
-        title="All Spectra",
+        sdp_table(sdps),
+        title="All Service Demarcation Points",
     )
 
 
 @router.get("/{id}/", response_model=FastUI, response_model_exclude_none=True)
-def spectrum_detail(id: int) -> list[AnyComponent]:
-    """Display spectrum details and action buttons."""
+def sdp_detail(id: int) -> list[AnyComponent]:
+    """Display sdp details and action buttons."""
     with Session() as session:
         sdp = session.query(SDP).filter(SDP.id == id).one_or_none()  # type: ignore[arg-type]
     if sdp is None:
         return app_page(title=f"No SDP with id {id}.")
-
-    global global_segments
-    spectrum_segments = []
-    # Filter out segments for this SDP
-    for segment in global_segments:
-        for wantSdpId in [sdp.stpA.stpId,sdp.stpZ.stpId]:
-            if '?' in segment.sourceStp:
-                #print("ARNO GOT QUESTON", segment.sourceStp)
-                parts = segment.sourceStp.split("?")
-                sourceSdpId = parts[0]
-            else:
-                sourceSdpId = segment.sourceStp
-            if sourceSdpId == wantSdpId:
-                #print("ARNO: SEGMENT MATCH", sourceSdpId)
-                spectrum_segments.append(segment)
-            #else:
-            #    print("ARNO: SEGMENT NOT MATCH",wantSdpId,"!=",sourceSdpId)
-
-    segtable = segment_table(spectrum_segments)
-
     return app_page(
         button_row(
             [
                 c.Button(
                     text="Back",
-                    on_click=GoToEvent(url="/spectrum"),
+                    on_click=GoToEvent(url="/sdp"),
                     class_name="+ ms-2",
                 ),
+                # c.Button(
+                #     text="Modify",
+                #     on_click=GoToEvent(url=f"/sdp/{id}/modify"),
+                #     class_name="+ ms-2",
+                # ),
             ]
         ),
         c.Heading(text="SDP details", level=4),
         c.Details(data=sdp),
-        c.Heading(text="Reservations on this link", level=4),
-        segtable,
+        c.Heading(text="StpA details", level=4),
+        c.Details(data=sdp.stpA),
+        c.Heading(text="StpZ details", level=4),
+        c.Details(data=sdp.stpZ),
         title=f"SDP {sdp.description}",
     )
 
 
-class SpectrumUpdateForm(BaseModel):
+# @router.get("/{id}/modify", response_model=FastUI, response_model_exclude_none=True)
+# def sdp_modify_form(id: int) -> list[AnyComponent]:
+#     with Session() as session:
+#         sdp = session.query(SDP).filter(SDP.id == id).one_or_none()  # type: ignore[arg-type]
+#     if sdp is None:
+#         return app_page(title=f"No SDP with id {id}.")
+#
+#     class SdpModifyForm(BaseModel):
+#         description: str = Field(default=sdp.description, title="Description")
+#
+#     """Render modify input form."""
+#     submit_url = f"/api/sdp/{sdp.id}/update"
+#     return app_page(
+#         c.Heading(text=f"{sdp.stpAId} <-> {sdp.stpZId}", level=4),
+#         c.ModelForm(model=SdpModifyForm, submit_url=submit_url, display_mode="default"),
+#         title="Modify SDP",
+#     )
+
+
+class SdpUpdateForm(BaseModel):
     description: str = Field()
 
 
 @router.post("/{id}/update", response_model=FastUI, response_model_exclude_none=True)
-def spectrum_update(id: int, form: Annotated[SpectrumUpdateForm, fastui_form(SpectrumUpdateForm)]) -> list[FireEvent]:
+def sdp_update(id: int, form: Annotated[SdpUpdateForm, fastui_form(SdpUpdateForm)]) -> list[FireEvent]:
     with Session.begin() as session:
         sdp = session.query(SDP).filter(SDP.id == id).one_or_none()
         if sdp is not None:
             sdp.description = form.description
-    return [c.FireEvent(event=GoToEvent(url=f"/spectrum/{id}/"))]
+    return [c.FireEvent(event=GoToEvent(url=f"/sdp/{id}/"))]
 
 
 def tabs() -> list[AnyComponent]:
@@ -146,18 +140,18 @@ def tabs() -> list[AnyComponent]:
             links=[
                 c.Link(
                     components=[c.Text(text="Active")],
-                    on_click=GoToEvent(url="/spectrum/active"),
-                    active="startswith:/spectrum/active",
+                    on_click=GoToEvent(url="/sdp/active"),
+                    active="startswith:/sdp/active",
                 ),
                 c.Link(
                     components=[c.Text(text="Inactive")],
-                    on_click=GoToEvent(url="/spectrum/inactive"),
-                    active="startswith:/spectrum/inactive",
+                    on_click=GoToEvent(url="/sdp/inactive"),
+                    active="startswith:/sdp/inactive",
                 ),
                 c.Link(
                     components=[c.Text(text="All")],
-                    on_click=GoToEvent(url="/spectrum/all"),
-                    active="startswith:/spectrum/all",
+                    on_click=GoToEvent(url="/sdp/all"),
+                    active="startswith:/sdp/all",
                 ),
             ],
             mode="tabs",

@@ -18,9 +18,9 @@ from uuid import UUID
 
 import structlog
 
-from aura.db import Session
-from aura.model import Log, Reservation
-from aura.settings import settings
+from amiss.db import Session
+from amiss.model import Log, Reservation
+from amiss.settings import settings
 
 
 class DatabaseLogHandler(Handler):
@@ -134,12 +134,12 @@ def init() -> None:
                 "file": {
                     "level": "DEBUG",
                     "class": "logging.handlers.WatchedFileHandler",
-                    "filename": "aura.log",
+                    "filename": "amiss.log",
                     "formatter": "plain",
                 },
                 "database": {
                     "level": "DEBUG",
-                    "class": "aura.log.DatabaseLogHandler",
+                    "class": "amiss.log.DatabaseLogHandler",
                     "formatter": "plain",
                 },
             },

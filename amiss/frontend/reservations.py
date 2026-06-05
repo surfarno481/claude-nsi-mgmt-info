@@ -32,30 +32,30 @@ from requests import RequestException
 from starlette.responses import StreamingResponse
 from statemachine.exceptions import TransitionNotAllowed
 
-from aura.db import Session
-from aura.dds import has_alias
-from aura.exception import AuraNsiError
-from aura.frontend.util import (
+from amiss.db import Session
+from amiss.dds import has_alias
+from amiss.exception import AmissNsiError
+from amiss.frontend.util import (
     app_page,
     button_row,
     reservation_buttons,
     reservation_header,
     reservation_table,
     reservation_tabs,
-    to_aura_connection_state,
+    to_amiss_connection_state,
 )
-from aura.fsm import ConnectionStateMachine
-from aura.job import (
+from amiss.fsm import ConnectionStateMachine
+from amiss.job import (
     nsi_send_provision_job,
     nsi_send_release_job,
     nsi_send_reserve_job,
     nsi_send_terminate_job,
     scheduler,
 )
-from aura.model import SDP, STP, Bandwidth, Log, Reservation, Vlan
-from aura.nsi import nsi_send_query_summary_sync
-from aura.settings import settings
-from aura.vlan import free_vlan_ranges
+from amiss.model import SDP, STP, Bandwidth, Log, Reservation, Vlan
+from amiss.nsi import nsi_send_query_summary_sync
+from amiss.settings import settings
+from amiss.vlan import free_vlan_ranges
 
 router = APIRouter()
 
@@ -336,12 +336,12 @@ async def reservation_verify(id: int) -> list[AnyComponent]:
         if "reservation" in reply_dict["Body"]["querySummarySyncConfirmed"]:
             nsi_connection_states = reply_dict["Body"]["querySummarySyncConfirmed"]["reservation"]["connectionStates"]
         else:
-            raise AuraNsiError("NSI provider: reservation not found")
-    except (RequestException, ConnectionError, AuraNsiError) as exception:
+            raise AmissNsiError("NSI provider: reservation not found")
+    except (RequestException, ConnectionError, AmissNsiError) as exception:
         components.append(c.Heading(text="Error", level=4))
         components.append(c.Paragraph(text=f"Cannot get NSI connection states: {exception!s}"))
     else:
-        connection_state = to_aura_connection_state(nsi_connection_states)
+        connection_state = to_amiss_connection_state(nsi_connection_states)
         components.append(c.Heading(text="NSI Connection States", level=4))
         components.append(c.Code(text=pformat(nsi_connection_states)))
         components.append(c.Heading(text="Verification Result", level=4))

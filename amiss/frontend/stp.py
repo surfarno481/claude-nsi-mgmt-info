@@ -21,9 +21,9 @@ from fastui.events import GoToEvent
 from fastui.forms import fastui_form
 from pydantic import BaseModel, Field
 
-from aura.db import Session
-from aura.frontend.util import app_page, button_row, stp_table
-from aura.model import STP
+from amiss.db import Session
+from amiss.frontend.util import app_page, button_row, stp_table
+from amiss.model import STP
 
 router = APIRouter()
 

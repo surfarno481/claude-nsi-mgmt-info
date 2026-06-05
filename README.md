@@ -34,15 +34,15 @@ All settings can be configured via environment variables or a `mgmtinfo_proxy.en
 
 | Variable | Default | Description |
 |---|---|---|
-| `MGMTINFO_BASE_URL` | `https://your-orchestrator-server/mgmt` | Base URL of the upstream WFO server. |
-| `MGMTINFO_CLIENT_CERT` | _(unset)_ | Path to the PEM-encoded client certificate used for mutual TLS with the MGMTINFO server. |
-| `MGMTINFO_CLIENT_KEY` | _(unset)_ | Path to the PEM-encoded private key corresponding to the client certificate. |
-| `MGMTINFO_CA_BUNDLE` | _(unset)_ | Path to a PEM file containing the CA certificates used to verify the MGMTINFO server. When set, replaces the system CA store entirely. |
+| `NSI_AMISS_WFO_URL` | `https://your-orchestrator-server/mgmt` | Base URL of the upstream WFO server. |
+| `NSI_AMISS_CERTIFICATE` | _(unset)_ | Path to the PEM-encoded client certificate used for mutual TLS with the MGMTINFO server. |
+| `NSI_AMISS_PRIVATE_KEY` | _(unset)_ | Path to the PEM-encoded private key corresponding to the client certificate. |
+| `CA_CERTIFICATES` | _(unset)_ | Path to a PEM file containing the CA certificates used to verify the MGMTINFO server. When set, replaces the system CA store entirely. |
 | `CACHE_TTL_SECONDS` | `60` | How long (in seconds) the MGMTINFO response is cached before the next upstream fetch. |
 | `HTTP_TIMEOUT_SECONDS` | `30.0` | Timeout (in seconds) for HTTP requests to the MGMTINFO server. |
 | `LOG_LEVEL` | `INFO` | Logging verbosity. Accepted values: `DEBUG`, `INFO`, `WARNING`, `ERROR`. |
-| `MGMTINFO_PROXY_HOST` | `localhost` | Interface the server binds to. Set to `0.0.0.0` to accept connections on all interfaces. |
-| `MGMTINFO_PROXY_PORT` | `8000` | TCP port the server listens on. |
+| `NSI_AMISS_HOST` | `localhost` | Interface the server binds to. Set to `0.0.0.0` to accept connections on all interfaces. |
+| `NSI_AMISS_PORT` | `8000` | TCP port the server listens on. |
 
 A ready-to-use template is provided in `mgmtinfo_proxy.env`. The application automatically reads this file from the working directory when it starts, so in most cases you only need to edit it in place.
 
@@ -90,7 +90,7 @@ Or invoke Uvicorn manually, which lets you override host, port, and the number o
 uvicorn mgmtinfo_proxy.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
-Note that when using `uvicorn` directly, `MGMTINFO_PROXY_HOST` and `MGMTINFO_PROXY_PORT` are ignored — pass them as CLI arguments instead.
+Note that when using `uvicorn` directly, `NSI_AMISS_HOST` and `NSI_AMISS_PORT` are ignored — pass them as CLI arguments instead.
 
 ### With Docker
 
@@ -106,10 +106,10 @@ Run it directly, mounting your certificate files and passing configuration via e
 docker run --rm \
   -p 8000:8000 \
   -v /path/to/your/certs:/certs:ro \
-  -e MGMTINFO_CLIENT_CERT=/certs/client-certificate.pem \
-  -e MGMTINFO_CLIENT_KEY=/certs/client-private-key.pem \
-  -e MGMTINFO_CA_BUNDLE=/certs/ca-bundle.pem \
-  -e MGMTINFO_BASE_URL=https://your-dds-server/dds \
+  -e NSI_AMISS_CERTIFICATE=/certs/client-certificate.pem \
+  -e NSI_AMISS_PRIVATE_KEY=/certs/client-private-key.pem \
+  -e CA_CERTIFICATES=/certs/ca-bundle.pem \
+  -e NSI_AMISS_WFO_URL=https://your-dds-server/dds \
   ghcr.io/workfloworchestrator/nsi-mgmt-info:0.1.0
 ```
 
@@ -161,15 +161,15 @@ spec:
           ports:
             - containerPort: 8000
           env:
-            - name: MGMTINFO_BASE_URL
+            - name: NSI_AMISS_WFO_URL
               value: "https://your-wfo-server/mgmt"
-            - name: MGMTINFO_PROXY_HOST
+            - name: NSI_AMISS_HOST
               value: "0.0.0.0"
-            - name: MGMTINFO_CLIENT_CERT
+            - name: NSI_AMISS_CERTIFICATE
               value: "/certs/client-certificate.pem"
-            - name: MGMTINFO_CLIENT_KEY
+            - name: NSI_AMISS_PRIVATE_KEY
               value: "/certs/client-private-key.pem"
-            - name: MGMTINFO_CA_BUNDLE
+            - name: CA_CERTIFICATES
               value: "/certs/ca-bundle.pem"
           volumeMounts:
             - name: certs
@@ -208,12 +208,12 @@ image:
   tag: latest
 env:
   CACHE_TTL_SECONDS: '60'
-  MGMTINFO_BASE_URL: https://nsi-orchestrator.your.domain/mgmt
-  MGMTINFO_CA_BUNDLE: /certs/ca-bundle.pem
-  MGMTINFO_CLIENT_CERT: /certs/client-certificate.pem
-  MGMTINFO_CLIENT_KEY: /certs/client-private-key.pem
-  MGMTINFO_PROXY_HOST: 0.0.0.0
-  MGMTINFO_PROXY_PORT: '8000'
+  NSI_AMISS_WFO_URL: https://nsi-orchestrator.your.domain/mgmt
+  CA_CERTIFICATES: /certs/ca-bundle.pem
+  NSI_AMISS_CERTIFICATE: /certs/client-certificate.pem
+  NSI_AMISS_PRIVATE_KEY: /certs/client-private-key.pem
+  NSI_AMISS_HOST: 0.0.0.0
+  NSI_AMISS_PORT: '8000'
   HTTP_TIMEOUT_SECONDS: '30.0'
   LOG_LEVEL: INFO
 livenessProbe:

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for aura.agg: aggregator proxy helpers (mocked HTTP)."""
+"""Tests for amiss.agg: aggregator proxy helpers (mocked HTTP)."""
 
 from unittest.mock import patch
 
@@ -20,9 +20,9 @@ from pydantic import HttpUrl
 
 
 class TestGetAggregatorReservations:
-    @patch("aura.agg.nsi_util_get_json")
+    @patch("amiss.agg.nsi_util_get_json")
     def test_appends_reservations_path_and_detail_full(self, mock_get_json):
-        from aura.agg import get_aggregator_reservations
+        from amiss.agg import get_aggregator_reservations
 
         mock_get_json.return_value = b'{"reservations": []}'
 
@@ -35,9 +35,9 @@ class TestGetAggregatorReservations:
         # Raw bytes are passed straight through from nsi_util_get_json.
         assert result == b'{"reservations": []}'
 
-    @patch("aura.agg.nsi_util_get_json")
+    @patch("amiss.agg.nsi_util_get_json")
     def test_handles_base_url_without_trailing_slash(self, mock_get_json):
-        from aura.agg import get_aggregator_reservations
+        from amiss.agg import get_aggregator_reservations
 
         get_aggregator_reservations(HttpUrl("http://agg.example/aggregator-proxy"))
 
@@ -45,9 +45,9 @@ class TestGetAggregatorReservations:
         # No double slash, prefix preserved.
         assert str(called_url) == "http://agg.example/aggregator-proxy/reservations"
 
-    @patch("aura.agg.nsi_util_get_json")
+    @patch("amiss.agg.nsi_util_get_json")
     def test_returns_none_when_request_fails(self, mock_get_json):
-        from aura.agg import get_aggregator_reservations
+        from amiss.agg import get_aggregator_reservations
 
         mock_get_json.return_value = None
 

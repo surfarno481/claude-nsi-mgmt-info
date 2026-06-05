@@ -12,35 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for aura.exception: Exception hierarchy."""
+"""Tests for amiss.exception: Exception hierarchy."""
 
 import pytest
 
-from aura.exception import AuraBaseError, AuraNsiError
+from amiss.exception import AmissBaseError, AmissNsiError
 
 
 class TestExceptions:
     @pytest.mark.parametrize(
         "exc_cls,message",
         [
-            pytest.param(AuraBaseError, "test message", id="base-error"),
-            pytest.param(AuraNsiError, "nsi error", id="nsi-error"),
-            pytest.param(AuraBaseError, "", id="empty-message"),
-            pytest.param(AuraNsiError, "unicode: \u00e9\u00e0\u00fc", id="unicode-message"),
+            pytest.param(AmissBaseError, "test message", id="base-error"),
+            pytest.param(AmissNsiError, "nsi error", id="nsi-error"),
+            pytest.param(AmissBaseError, "", id="empty-message"),
+            pytest.param(AmissNsiError, "unicode: \u00e9\u00e0\u00fc", id="unicode-message"),
         ],
     )
     def test_message_preserved(self, exc_cls, message):
         e = exc_cls(message)
         assert str(e) == message
 
-    def test_aura_base_error_is_exception(self):
-        assert isinstance(AuraBaseError("x"), Exception)
+    def test_amiss_base_error_is_exception(self):
+        assert isinstance(AmissBaseError("x"), Exception)
 
-    def test_aura_nsi_error_inherits_base(self):
-        e = AuraNsiError("x")
-        assert isinstance(e, AuraBaseError)
+    def test_amiss_nsi_error_inherits_base(self):
+        e = AmissNsiError("x")
+        assert isinstance(e, AmissBaseError)
         assert isinstance(e, Exception)
 
-    def test_aura_nsi_error_catchable_as_base(self):
-        with pytest.raises(AuraBaseError):
-            raise AuraNsiError("test")
+    def test_amiss_nsi_error_catchable_as_base(self):
+        with pytest.raises(AmissBaseError):
+            raise AmissNsiError("test")

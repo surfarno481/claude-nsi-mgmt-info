@@ -17,8 +17,8 @@ import platform
 import structlog
 import uvicorn
 
-from aura import app
-from aura.settings import settings
+from amiss import app
+from amiss.settings import settings
 
 logger = structlog.get_logger(__name__)
 
@@ -26,7 +26,7 @@ logger = structlog.get_logger(__name__)
 def main() -> None:
     logger.info(
         (
-            f"start NSI-AuRA {importlib.metadata.version('nsi-aura')} "
+            f"start NSI-AMISS {importlib.metadata.version('nsi-mgmt-info')} "
             f"using Python {platform.python_version()} ({platform.python_implementation()}) "
             f"on {platform.node()}"
         )
@@ -39,7 +39,7 @@ def main() -> None:
         case _:
             message = f"use CA bundle from {settings.CA_CERTIFICATES} for certificate verification"
     logger.info(message)
-    uvicorn.run(app, host=settings.NSI_AURA_HOST, port=settings.NSI_AURA_PORT, log_config=None)
+    uvicorn.run(app, host=settings.NSI_AMISS_HOST, port=settings.NSI_AMISS_PORT, log_config=None)
 
 
 if __name__ == "__main__":

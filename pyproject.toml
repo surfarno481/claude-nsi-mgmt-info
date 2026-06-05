@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "nsi-aura"
+name = "nsi-mgmt-info"
 version = "0.3.1.dev1"
 dependencies = [
     "apscheduler==3.11.2",
@@ -42,10 +42,10 @@ license = "Apache-2.0"
 license-files = ["LICENSE.txt"]
 
 [tool.setuptools]
-packages = ["aura", "aura.frontend"]
+packages = ["amiss", "amiss.frontend"]
 
 [tool.setuptools.data-files]
-"share/aura/static" = ["static/*"]
+"share/amiss/static" = ["static/*"]
 
 [dependency-groups]
 dev = [
@@ -74,12 +74,12 @@ dev = [
 [project.urls]
 # Homepage =
 # Documentation =
-Repository = "https://github.com/workfloworchestrator/nsi-aura.git"
+Repository = "https://github.com/workfloworchestrator/nsi-mgmt-info.git"
 # "Bug Tracker" =
 # Changelog =
 
 [project.scripts]
-nsi-aura = "aura.__main__:main"
+nsi-mgmt-info = "amiss.__main__:main"
 
 [project.gui-scripts]
 

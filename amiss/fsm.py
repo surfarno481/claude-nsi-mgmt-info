@@ -20,7 +20,7 @@ from structlog.stdlib import BoundLogger
 logger = structlog.get_logger(__name__)
 
 
-class AuraStateMachine(StateMachine):
+class AmissStateMachine(StateMachine):
     """Add logging capabilities to StateMachine."""
 
     log: BoundLogger
@@ -40,7 +40,7 @@ class AuraStateMachine(StateMachine):
             )
 
 
-class ConnectionStateMachine(AuraStateMachine):
+class ConnectionStateMachine(AmissStateMachine):
     """Reservation State Machine.
 
     .. image:: /images/ConnectionStateMachine.png

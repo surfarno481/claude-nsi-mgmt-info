@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for aura.functional: expand_ranges() and to_ranges()."""
+"""Tests for amiss.functional: expand_ranges() and to_ranges()."""
 
 import pytest
 
-from aura.functional import expand_ranges, to_ranges
+from amiss.functional import expand_ranges, to_ranges
 
 
 class TestExpandRanges:

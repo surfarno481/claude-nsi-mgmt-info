@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for aura.model: STP properties, Reservation validation, and type constraints."""
+"""Tests for amiss.model: STP properties, Reservation validation, and type constraints."""
 
 from datetime import datetime, timezone
 from uuid import uuid4
@@ -20,7 +20,7 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from aura.model import STP, Reservation
+from amiss.model import STP, Reservation
 
 
 def _reservation_data(**overrides):

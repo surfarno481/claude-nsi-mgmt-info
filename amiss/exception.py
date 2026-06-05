@@ -13,15 +13,15 @@
 # limitations under the License.
 
 
-class AuraBaseError(Exception):
-    """Base class for all Aura related errors."""
+class AmissBaseError(Exception):
+    """Base class for all Amiss related errors."""
 
     def __init__(self, message: str) -> None:
         super().__init__(message)
 
 
-class AuraNsiError(AuraBaseError):
-    """Aura NSI related errors."""
+class AmissNsiError(AmissBaseError):
+    """Amiss NSI related errors."""
 
     def __init__(self, message: str) -> None:
         super().__init__(message)

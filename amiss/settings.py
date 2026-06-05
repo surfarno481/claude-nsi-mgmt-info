@@ -22,17 +22,17 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    """Aura application settings."""
+    """Amiss application settings."""
 
     SITE_TITLE: str = "AMISS"
 
     # host and port to bind to
-    NSI_AURA_HOST: str = "127.0.0.1"
-    NSI_AURA_PORT: int = 8000
+    NSI_AMISS_HOST: str = "127.0.0.1"
+    NSI_AMISS_PORT: int = 8000
 
     # certificate en key to authenticate against NSI control plane
-    NSI_AURA_CERTIFICATE: FilePath = FilePath("aura-certificate.pem")
-    NSI_AURA_PRIVATE_KEY: FilePath = FilePath("aura-private-key.pem")
+    NSI_AMISS_CERTIFICATE: FilePath = FilePath("amiss-certificate.pem")
+    NSI_AMISS_PRIVATE_KEY: FilePath = FilePath("amiss-private-key.pem")
 
     # override use of default CA bundle with certificates from a file or directory
     CA_CERTIFICATES: FilePath | DirectoryPath | None = None
@@ -41,12 +41,12 @@ class Settings(BaseSettings):
     VERIFY_REQUESTS: bool = True
 
     # database directory, may be relative or absolute
-    DATABASE_URI: str = "sqlite:///db/aura.db"
+    DATABASE_URI: str = "sqlite:///db/amiss.db"
 
     # directory containing static files, such as images and SOAP templates
     STATIC_DIRECTORY: DirectoryPath = DirectoryPath("static")
 
-    # nsi-aura (external) URL (scheme, host, port, prefix)
+    # nsi-mgmt-info (external) URL (scheme, host, port, prefix)
     NSA_SCHEME: str = "http"
     NSA_HOST: str = "localhost"
     NSA_PORT: str = "8000"
@@ -57,6 +57,9 @@ class Settings(BaseSettings):
     NSI_PROVIDER_ID: str = "urn:ogf:network:domain.example:2024:nsa"
     NSI_DDS_URL: HttpUrl = HttpUrl("http://dds.domain.example/dds/") # ARNOTODO: DDS_PROXY
     NSI_AGG_PROXY_URL:  HttpUrl = HttpUrl("http://aggregator-proxy.domain.example/")
+
+    # upstream WFO (workflow orchestrator) management URL
+    NSI_AMISS_WFO_URL: HttpUrl = HttpUrl("http://orchestrator.domain.example/mgmt")
 
     # Logging
     SQL_LOGGING: bool = False
@@ -82,4 +85,4 @@ class Settings(BaseSettings):
         return (str(self.CA_CERTIFICATES) if self.CA_CERTIFICATES else None) if self.VERIFY_REQUESTS else False
 
 
-settings = Settings(_env_file="aura.env")
+settings = Settings(_env_file="amiss.env")
