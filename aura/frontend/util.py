@@ -245,7 +245,7 @@ def spectrum_table(sdps: list[SDP]) -> c.Table:
             #DisplayLookup(field="stpZId"),
             DisplayLookup(field="description"),
             DisplayLookup(field="vlanRange"),
-            DisplayLookup(field="active"),
+            #DisplayLookup(field="active"),
         ],
         class_name="+ small",
     )

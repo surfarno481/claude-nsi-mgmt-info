@@ -62,7 +62,7 @@ logger = structlog.get_logger(__name__)
 def segdicts_to_segments(parentConnectionIdStr: str, segdicts: list) -> list[Segment]:
     """Parse dict representation of the segments making up the NSI reservation "parentConnectionIdStr"
     and return the lists of Segments."""
-    log = logger.bind(topology=connectionIdStr) # ARNOTODO: what does topology param do?
+    log = logger.bind(topology=parentConnectionIdStr) # ARNOTODO: what does topology param do?
 
     segments = []
 
@@ -82,7 +82,7 @@ def segdicts_to_segments(parentConnectionIdStr: str, segdicts: list) -> list[Seg
 
         # Find Ids for given source and dest STPs
 
-        ssegments.append(
+        segments.append(
             Segment(
                 #id=id
                 connectionId=childConnectionId,

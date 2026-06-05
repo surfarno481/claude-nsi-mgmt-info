@@ -96,16 +96,16 @@ def spectrum_detail(id: int) -> list[AnyComponent]:
     for segment in global_segments:
         for wantSdpId in [sdp.stpA.stpId,sdp.stpZ.stpId]:
             if '?' in segment.sourceStp:
-                print("ARNO GOT QUESTON", segment.sourceStp)
+                #print("ARNO GOT QUESTON", segment.sourceStp)
                 parts = segment.sourceStp.split("?")
                 sourceSdpId = parts[0]
             else:
                 sourceSdpId = segment.sourceStp
             if sourceSdpId == wantSdpId:
-                print("ARNO: SEGMENT MATCH", sourceSdpId)
+                #print("ARNO: SEGMENT MATCH", sourceSdpId)
                 spectrum_segments.append(segment)
-            else:
-                print("ARNO: SEGMENT NOT MATCH",wantSdpId,"!=",sourceSdpId)
+            #else:
+            #    print("ARNO: SEGMENT NOT MATCH",wantSdpId,"!=",sourceSdpId)
 
     segtable = segment_table(spectrum_segments)
 
