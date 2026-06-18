@@ -60,6 +60,51 @@ class TestNsiPollDdsJob:
         mock_update_sdps.assert_called_once()
 
 
+class TestNsiPollAggJob:
+    @patch("amiss.job.update_segments")
+    @patch("amiss.job.get_aggregator_reservations")
+    def test_returns_early_when_no_data(self, mock_get, mock_update):
+        from amiss.job import nsi_poll_agg_job
+
+        mock_get.return_value = None
+        nsi_poll_agg_job()
+        mock_update.assert_not_called()
+
+    @patch("amiss.job.update_segments")
+    @patch("amiss.job.get_aggregator_reservations")
+    def test_returns_on_invalid_json(self, mock_get, mock_update):
+        from amiss.job import nsi_poll_agg_job
+
+        mock_get.return_value = b"not json"
+        nsi_poll_agg_job()
+        mock_update.assert_not_called()
+
+    @patch("amiss.job.update_segments")
+    @patch("amiss.job.get_aggregator_reservations")
+    def test_returns_when_no_reservations_key(self, mock_get, mock_update):
+        from amiss.job import nsi_poll_agg_job
+
+        mock_get.return_value = b'{"other": []}'
+        nsi_poll_agg_job()
+        mock_update.assert_not_called()
+
+    @patch("amiss.job.update_segments")
+    @patch("amiss.job.get_aggregator_reservations")
+    def test_calls_update_segments_per_qualifying_reservation(self, mock_get, mock_update):
+        from amiss.job import nsi_poll_agg_job
+
+        mock_get.return_value = (
+            b'{"reservations": ['
+            b'{"connectionId": "c1", "segments": [{"order": 0}]},'
+            b'{"connectionId": "c2"},'  # no segments -> skipped
+            b'{"segments": [{"order": 0}]}'  # no connectionId -> skipped
+            b']}'
+        )
+        nsi_poll_agg_job()
+
+        mock_update.assert_called_once_with("c1", [{"order": 0}])
+
+
 class TestNsiSendReserveJob:
     @patch("amiss.job.nsi_send_reserve")
     @patch("amiss.job.new_correlation_id_on_reservation")

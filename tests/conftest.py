@@ -32,7 +32,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session as SQLModelSession, SQLModel, create_engine
 
 from amiss.log import DatabaseLogHandler
-from amiss.model import SDP, STP, Reservation
+from amiss.model import SDP, STP, Reservation, Segment
 
 
 def _disable_database_log_handler():
@@ -104,6 +104,28 @@ def sdp_factory():
         return SDP(**defaults)
 
     return _make_sdp
+
+
+@pytest.fixture()
+def segment_factory():
+    """Factory for creating Segment instances."""
+
+    def _make_segment(**kwargs):
+        defaults = {
+            "connectionId": "child-seg-0",
+            "reservation_id": 1,
+            "order": 0,
+            "providerNSA": "SupaDuppa",
+            "serviceType": "EVTS.A-GOLE",
+            "capacity": 32768,
+            "sourceStp": "internet2.edu:2025:ana:manlan.ps1",
+            "destStp": "surf.nl:2020:ana:netherlight.ps1",
+            "status": "ACTIVE",
+        }
+        defaults.update(kwargs)
+        return Segment(**defaults)
+
+    return _make_segment
 
 
 @pytest.fixture()

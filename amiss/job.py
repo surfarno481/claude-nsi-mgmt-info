@@ -11,6 +11,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import json
 from uuid import UUID, uuid4
 
 import structlog
@@ -19,9 +20,9 @@ from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.schedulers.background import BackgroundScheduler
 from pytz import utc
 
+from amiss.agg import get_aggregator_reservations, update_segments
 from amiss.db import Session
 from amiss.dds import TOPOLOGY_MIME_TYPE, get_dds_documents, topology_to_stps, update_sdps, update_stps
-from amiss.agg import segdicts_to_segments, get_aggregator_reservations
 from amiss.fsm import ConnectionStateMachine
 from amiss.model import STP, Reservation
 from amiss.nsi import (
@@ -30,7 +31,7 @@ from amiss.nsi import (
     nsi_send_reserve,
     nsi_send_reserve_commit,
     nsi_send_terminate,
-    nsi_xml_to_dict, nsi_util_get_json,
+    nsi_xml_to_dict,
 )
 from amiss.settings import settings
 
@@ -60,30 +61,25 @@ def nsi_poll_dds_job() -> None:
     update_sdps()
 
 def nsi_poll_agg_job() -> None:
-    """Poll the Aggregator for reservations and update Reservations and Segment data model."""
+    """Poll the Aggregator for reservations and persist their Segments to the database."""
     url = settings.NSI_AGG_PROXY_URL
+    log = logger.bind(url=str(url))
     jsondata = get_aggregator_reservations(url)
     if jsondata is None:
         # Error already logged
         return
     try:
         jsondict = json.loads(jsondata)
-    except Error as e:
-        log.warning("cannot parse reservations JSON document", url=str(url), error=str(e))
-        return None
+    except (json.JSONDecodeError, ValueError) as e:
+        log.warning("cannot parse reservations JSON document", error=str(e))
+        return
     if "reservations" not in jsondict:
-        log.warning("No reservations in reservations JSON document", url=str(url))
-        return None
+        log.warning("no reservations in reservations JSON document")
+        return
 
-    # Update Reservations
     for resdict in jsondict["reservations"]:
-        # ARNOTODO
-        # Update reservations in-memory
         if "connectionId" in resdict and "segments" in resdict:
-            # Update Segments in-memory
-            segments = segdicts_to_segments(resdict["connectionId"],resdict["segments"])
-            global global_segments
-            global_segments = segments
+            update_segments(resdict["connectionId"], resdict["segments"])
 
 def nsi_send_reserve_job(reservation_id: int) -> None:
     new_correlation_id_on_reservation(reservation_id)

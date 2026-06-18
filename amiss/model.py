@@ -18,7 +18,6 @@ from uuid import UUID
 
 from annotated_types import Ge, Gt, Le, doc
 from sqlmodel import Field, Relationship, SQLModel
-from pydantic import BaseModel
 
 #
 # Types
@@ -124,47 +123,31 @@ class Log(SQLModel, table=True):
     timestamp: datetime
     message: str
 
-#
-# In-memory cf. AMISS 0.1
-#
-class Segment(BaseModel):
-    """Segment in a NSI P2P circuit, as defined in Aggregator-Proxy API:
+class Segment(SQLModel, table=True):
+    """Segment in an NSI P2P circuit (aggregator-proxy API model).
+
+    Each Segment is a child of a parent NSI reservation (``reservation_id`` references
+    ``Reservation.id``). See
     https://github.com/workfloworchestrator/nsi-aggregator-proxy#query-parameters
-    ##
-    order: 0,
-    connectionId: "child-seg-0",
-    providerNSA: "urn:ogf:network:west.example.net:2025:nsa:supa",
-    serviceType: "http://services.ogf.org/nsi/2013/12/descriptions/EVTS.A-GOLE",
-    capacity: 1000,
-    sourceSTP: urn:ogf:network:west.example.net:2025:port-a?vlan=100,
-    destSTP: urn:ogf:network:west.example.net:2025:port-b?vlan=200",
-    status: "ACTIVATED"
-    ##
+    Example aggregator-proxy segment::
+
+        order: 0,
+        connectionId: "child-seg-0",
+        providerNSA: "urn:ogf:network:west.example.net:2025:nsa:supa",
+        serviceType: "http://services.ogf.org/nsi/2013/12/descriptions/EVTS.A-GOLE",
+        capacity: 1000,
+        sourceSTP: urn:ogf:network:west.example.net:2025:port-a?vlan=100,
+        destSTP: urn:ogf:network:west.example.net:2025:port-b?vlan=200,
+        status: "ACTIVATED"
     """
-    id: int
-    connectionId: str # UUID | None
-    # parent
-    reservation_id: str
-    # other fields from Agg schema:
+
+    id: int | None = Field(default=None, primary_key=True)
+    connectionId: str  # child connectionId, used as the upsert key
+    reservation_id: int = Field(foreign_key="reservation.id")
     order: int
-    providerNSA: str # | None   # "urn:ogf:network:west.example.net:2025:nsa:supa",
-    serviceType: str # | None   # "http://services.ogf.org/nsi/2013/12/descriptions/EVTS.A-GOLE",
-    capacity:  int # = Field(default=1) # 1000,
+    providerNSA: str
+    serviceType: str
+    capacity: int
     sourceStp: str
     destStp: str
-    status: str # | None
-
-#
-# Some dummy data
-#
-
-global_segments = [
-    Segment(id=1,connectionId="moxy-child-seg-0",reservation_id="663EF9C9-34E7-4401-ADD1-E976072B526B",order=0,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="internet2.edu:2025:ana:manlan.ps1",destStp="internet2.edu:2025:ana:manlan.moxy-1?vlan=481",status="ACTIVE"),
-    Segment(id=2,connectionId="moxy-child-seg-1",reservation_id="663EF9C9-34E7-4401-ADD1-E976072B526B",order=1,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="internet2.edu:2025:ana:manlan.moxy-1?vlan=481",destStp="surf.nl:2020:ana:netherlight.moxy-1?vlan=481",status="ACTIVE"),
-    Segment(id=3,connectionId="moxy-child-seg-2",reservation_id="663EF9C9-34E7-4401-ADD1-E976072B526B",order=2,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="surf.nl:2020:ana:netherlight.moxy-1?vlan=481",destStp="surf.nl:2020:ana:netherlight.ps1",status="ACTIVE"),
-    Segment(id=4,connectionId="moxy-child-seg-3",reservation_id="193E4258-5AC3-4A99-A6C3-440DF9575E0A",order=0,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="internet2.edu:2025:ana:manlan.ps1",destStp="internet2.edu:2025:ana:manlan.moxy-1?vlan=139",status="ACTIVE"),
-    Segment(id=5,connectionId="moxy-child-seg-4",reservation_id="193E4258-5AC3-4A99-A6C3-440DF9575E0A",order=1,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="internet2.edu:2025:ana:manlan.moxy-1?vlan=139",destStp="surf.nl:2020:ana:netherlight.moxy-1?vlan=139",status="ACTIVE"),
-    Segment(id=6,connectionId="moxy-child-seg-6",reservation_id="193E4258-5AC3-4A99-A6C3-440DF9575E0A",order=2,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="surf.nl:2020:ana:netherlight.moxy-1?vlan=139",destStp="surf.nl:2020:ana:netherlight.ps1",status="ACTIVE"),
-    Segment(id=7,connectionId="nea3r-child-seg-0",reservation_id="35A542F5-9657-4EC0-96CE-4DD8A8EB5AB9",order=0,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="internet2.edu:2025:ana:manlan.ps1",destStp="internet2.edu:2025:ana:manlan.netherlight-1?vlan=868",status="ACTIVE"),
-    Segment(id=8,connectionId="nea3r-child-seg-1",reservation_id="35A542F5-9657-4EC0-96CE-4DD8A8EB5AB9",order=1,providerNSA="SupaDuppa",serviceType="EVTS.A-GOLE",capacity="32768",sourceStp="internet2.edu:2025:ana:manlan.netherlight-1?vlan=868",destStp="surf.nl:2020:ana:netherlight.ps1",status="ACTIVE"),
-]
+    status: str

@@ -35,17 +35,17 @@ nsi-mgmt-info
 
 ## Architecture
 
-**App initialization** (`amiss/__init__.py`): Creates the FastAPI app, mounts static files at `/static`, registers all routers, starts APScheduler, and defines a catch-all `/{path:path}` route that serves FastUI's prebuilt React SPA HTML.
+**App initialization** (`amiss/__init__.py`): Creates the FastAPI app, mounts static files at `/static`, registers all routers, starts APScheduler, and defines a catch-all `/{path:path}` route that serves FastUI's prebuilt React SPA HTML. When `SEED_DUMMY_SEGMENTS_DATA` is set, it idempotently seeds dummy `Reservation`/`Segment` rows at startup via `amiss/seed.py` (dev/demo only).
 
 **Frontend** (`amiss/frontend/`): FastAPI routers return FastUI JSON component trees, not HTML. The React SPA (served by `prebuilt_html()`) fetches these JSON responses and renders them client-side. Routes: reservations CRUD, STP/SDP listings, NSI provider info, healthcheck.
 
 **State machine** (`amiss/fsm.py`): `ConnectionStateMachine` (python-statemachine) with 16 states tracking the NSI connection lifecycle from `ConnectionNew` through reserve/commit/provision/active/release/terminate to `ConnectionDeleted`. State values are stored in the `Reservation.state` database column.
 
-**Background jobs** (`amiss/job.py`): APScheduler with ThreadPoolExecutor (10 workers). `nsi_poll_dds_job` runs every minute to fetch topology from DDS and update STPs/SDPs. NSI workflow jobs (reserve, commit, provision, release, terminate) are scheduled on-demand per reservation.
+**Background jobs** (`amiss/job.py`): APScheduler with ThreadPoolExecutor (10 workers). `nsi_poll_dds_job` runs every minute to fetch topology from DDS and update STPs/SDPs. NSI workflow jobs (reserve, commit, provision, release, terminate) are scheduled on-demand per reservation. `nsi_poll_agg_job` fetches reservations from the aggregator proxy and upserts their `Segment`s into the DB, but is **not currently scheduled**.
 
 **NSI integration** (`amiss/nsi.py`, `amiss/dds.py`): SOAP/XML over HTTP with mutual TLS client certificates. `nsi.py` sends NSI commands to the provider. `dds.py` fetches and parses NML topology documents from the Document Distribution Service.
 
-**Database** (`amiss/db.py`, `amiss/model.py`): SQLModel ORM. SQLite by default (`sqlite:///db/amiss.db`), PostgreSQL via `DATABASE_URI`. Table models: `STP` (network endpoints), `SDP` (demarcation points connecting two STPs via `stpA`/`stpZ`), `Reservation` (connection requests with state machine; references source/dest `STP` and links many-to-many to `SDP`), `ReservationSDPLink` (the Reservation↔SDP association table), `Log` (audit trail). `Segment` is **not** a table — it is an in-memory Pydantic `BaseModel` representing a path segment of an NSI P2P circuit (shaped after the nsi-aggregator-proxy API), e.g. parsed from the aggregator proxy in `amiss/agg.py`.
+**Database** (`amiss/db.py`, `amiss/model.py`): SQLModel ORM. Defaults to a shared **in-memory** SQLite database (`sqlite:///file::memory:?cache=shared&uri=true`, ephemeral — no persistence; `db.py` uses a `StaticPool` + `check_same_thread=False` for in-memory SQLite so the DB survives across the APScheduler/FastAPI threads). File-based SQLite or PostgreSQL via `DATABASE_URI`. Table models: `STP` (network endpoints), `SDP` (demarcation points connecting two STPs via `stpA`/`stpZ`), `Reservation` (connection requests with state machine; references source/dest `STP` and links many-to-many to `SDP`), `ReservationSDPLink` (the Reservation↔SDP association table), `Segment` (a path segment of an NSI P2P circuit shaped after the nsi-aggregator-proxy API; child of a `Reservation` via the `reservation_id` FK, parsed and upserted in `amiss/agg.py`), `Log` (audit trail).
 
 **Static files packaging**: `pyproject.toml` uses `[tool.setuptools.data-files]` to install static assets to `share/amiss/static/` in the wheel. The Dockerfile sets `STATIC_DIRECTORY=/usr/local/share/amiss/static` to point to the installed location.
 

@@ -40,8 +40,14 @@ class Settings(BaseSettings):
     # requests certificate verification, only disable while debugging!
     VERIFY_REQUESTS: bool = True
 
-    # database directory, may be relative or absolute
-    DATABASE_URI: str = "sqlite:///db/amiss.db"
+    # database directory, may be relative or absolute.
+    # The default is a shared in-memory SQLite database (ephemeral, no persistence).
+    # The `uri=true` query is required so SQLite parses `file::memory:` as a URI instead of
+    # creating a file literally named `file::memory:` on disk.
+    DATABASE_URI: str = "sqlite:///file::memory:?cache=shared&uri=true"
+
+    # seed dummy parent Reservations and Segments at startup (dev/demo only)
+    SEED_DUMMY_SEGMENTS_DATA: bool = False
 
     # directory containing static files, such as images and SOAP templates
     STATIC_DIRECTORY: DirectoryPath = DirectoryPath("static")

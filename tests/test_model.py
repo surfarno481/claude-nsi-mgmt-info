@@ -20,7 +20,7 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from amiss.model import STP, Reservation
+from amiss.model import STP, Reservation, Segment
 
 
 def _reservation_data(**overrides):
@@ -205,6 +205,46 @@ class TestReservationVlanValidation:
         else:
             with pytest.raises(ValidationError):
                 Reservation.model_validate(data)
+
+
+class TestSegment:
+    """Segment is now a persisted SQLModel table (was an in-memory BaseModel)."""
+
+    def test_is_a_table(self):
+        assert Segment.__tablename__ == "segment"
+
+    def test_foreign_key_targets_reservation_id(self):
+        fk = next(iter(Segment.__table__.c["reservation_id"].foreign_keys))
+        assert fk.target_fullname == "reservation.id"
+
+    def test_capacity_validated_as_int(self):
+        """Table models don't coerce at __init__, but model_validate coerces capacity to int."""
+        data = {
+            "connectionId": "c",
+            "reservation_id": 1,
+            "order": 0,
+            "providerNSA": "p",
+            "serviceType": "s",
+            "capacity": "32768",
+            "sourceStp": "a",
+            "destStp": "b",
+            "status": "ACTIVE",
+        }
+        segment = Segment.model_validate(data)
+        assert segment.capacity == 32768
+        assert isinstance(segment.capacity, int)
+
+    def test_id_defaults_to_none_until_persisted(self, segment_factory):
+        assert segment_factory().id is None
+
+    def test_persist_and_read_back(self, db_session, segment_factory):
+        db_session.add(segment_factory(connectionId="seg-persist", order=3))
+        db_session.flush()
+
+        stored = db_session.query(Segment).filter(Segment.connectionId == "seg-persist").one()
+        assert stored.id is not None
+        assert stored.order == 3
+        assert stored.reservation_id == 1
 
 
 class TestReservationBandwidthValidation:

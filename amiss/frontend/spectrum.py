@@ -35,7 +35,7 @@ from pydantic import BaseModel, Field
 
 from amiss.db import Session
 from amiss.frontend.util import app_page, button_row, spectrum_table, segment_table
-from amiss.model import SDP, global_segments
+from amiss.model import SDP, Segment
 
 router = APIRouter()
 
@@ -87,25 +87,17 @@ def spectrum_detail(id: int) -> list[AnyComponent]:
     """Display spectrum details and action buttons."""
     with Session() as session:
         sdp = session.query(SDP).filter(SDP.id == id).one_or_none()  # type: ignore[arg-type]
-    if sdp is None:
-        return app_page(title=f"No SDP with id {id}.")
+        if sdp is None:
+            return app_page(title=f"No SDP with id {id}.")
+        want_sdp_ids = [sdp.stpA.stpId, sdp.stpZ.stpId]
+        segments = session.query(Segment).all()
 
-    global global_segments
-    spectrum_segments = []
-    # Filter out segments for this SDP
-    for segment in global_segments:
-        for wantSdpId in [sdp.stpA.stpId,sdp.stpZ.stpId]:
-            if '?' in segment.sourceStp:
-                #print("ARNO GOT QUESTON", segment.sourceStp)
-                parts = segment.sourceStp.split("?")
-                sourceSdpId = parts[0]
-            else:
-                sourceSdpId = segment.sourceStp
-            if sourceSdpId == wantSdpId:
-                #print("ARNO: SEGMENT MATCH", sourceSdpId)
-                spectrum_segments.append(segment)
-            #else:
-            #    print("ARNO: SEGMENT NOT MATCH",wantSdpId,"!=",sourceSdpId)
+    # Keep the segments whose source STP (minus any ?vlan=... suffix) is one of this SDP's STPs.
+    spectrum_segments = [
+        segment
+        for segment in segments
+        if (segment.sourceStp.split("?")[0] if "?" in segment.sourceStp else segment.sourceStp) in want_sdp_ids
+    ]
 
     segtable = segment_table(spectrum_segments)
 

@@ -29,12 +29,19 @@ from amiss.frontend.stp import router as stp_router
 from amiss.frontend.spectrum import router as spectrum_router
 from amiss.job import nsi_poll_dds_job, scheduler
 from amiss.log import init as log_init
+from amiss.seed import seed
 from amiss.settings import settings
 
 #
 # logging
 #
 log_init()
+
+#
+# dummy data seeding (dev/demo only)
+#
+if settings.SEED_DUMMY_SEGMENTS_DATA:
+    seed()
 
 #
 # scheduler

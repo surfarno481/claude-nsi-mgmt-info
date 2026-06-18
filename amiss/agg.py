@@ -12,18 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# ARNOTODO: Convert code for SDPs to Segment
-
-import base64
-import zlib
-from string import capwords
+from uuid import UUID
 
 import structlog
 from pydantic import HttpUrl
-from sqlalchemy import or_, update
+from sqlalchemy import delete
 
 from amiss.db import Session
-from amiss.model import SDP, STP, Segment
+from amiss.model import Reservation, Segment
 from amiss.nsi import nsi_util_get_json
 
 logger = structlog.get_logger(__name__)
@@ -74,10 +70,13 @@ def get_aggregator_reservations(proxy_url: HttpUrl) -> bytes | None:
     return nsi_util_get_json(reservations_url, queryparams)
 
 
-def segdicts_to_segments(parentConnectionIdStr: str, segdicts: list) -> list[Segment]:
-    """Parse dict representation of the segments making up the NSI reservation "parentConnectionIdStr"
-    and return the lists of Segments."""
-    log = logger.bind(topology=parentConnectionIdStr) # ARNOTODO: what does topology param do?
+def segdicts_to_segments(reservation_id: int, segdicts: list) -> list[Segment]:
+    """Parse the aggregator-proxy ``segdicts`` of a parent reservation into ``Segment`` objects.
+
+    ``reservation_id`` is the parent ``Reservation.id`` these segments belong to; it is stored on
+    each Segment as the foreign key. The returned Segments are transient (no ``id`` assigned yet).
+    """
+    log = logger.bind(reservation_id=reservation_id)
 
     segments = []
 
@@ -85,32 +84,95 @@ def segdicts_to_segments(parentConnectionIdStr: str, segdicts: list) -> list[Seg
         try:
             order = int(segdict["order"])
             childConnectionId = segdict["connectionId"]
-            providerNSA =  segdict["providerNSA"]
-            serviceType =  segdict["serviceType"]
+            providerNSA = segdict["providerNSA"]
+            serviceType = segdict["serviceType"]
             capacity = int(segdict["capacity"])
-            sourceStpUrn =  segdict["sourceSTP"]
-            destStpUrn =  segdict["destSTP"]
+            sourceStpUrn = segdict["sourceSTP"]
+            destStpUrn = segdict["destSTP"]
             status = segdict["status"]
         except KeyError as e:
             log.warning("cannot parse reservation JSON", error=f"cannot find {e!s} in reservation JSON")
             continue
 
-        # Find Ids for given source and dest STPs
-
         segments.append(
             Segment(
-                #id=id
                 connectionId=childConnectionId,
-                reservation_id=parentConnectionIdStr,
+                reservation_id=reservation_id,
                 order=order,
                 providerNSA=providerNSA,
                 serviceType=serviceType,
                 capacity=capacity,
                 sourceStp=sourceStpUrn,
                 destStp=destStpUrn,
-                status=status
+                status=status,
             )
         )
         log.debug(f"found Segment {childConnectionId}: {segments[-1]}")
     return segments
+
+
+def update_segments(parentConnectionId: str, segdicts: list) -> None:
+    """Persist the segments of the parent reservation identified by ``parentConnectionId``.
+
+    Resolves ``parentConnectionId`` (an NSI connection id) to its ``Reservation``, then upserts the
+    parsed segments keyed by their child ``connectionId`` and hard-deletes any previously-stored
+    segments of that reservation that are no longer reported. Segments whose parent reservation is
+    not (yet) in the database are skipped with a warning.
+    """
+    log = logger.bind(parentConnectionId=parentConnectionId)
+    with Session.begin() as session:
+        reservation = (
+            session.query(Reservation).filter(Reservation.connectionId == UUID(parentConnectionId)).one_or_none()  # type: ignore[arg-type]
+        )
+        if reservation is None:
+            log.warning("no reservation for connectionId, skipping segments")
+            return
+        reservation_id = reservation.id
+        if reservation_id is None:  # pragma: no cover - a persisted reservation always has an id
+            return
+
+        new_segments = segdicts_to_segments(reservation_id, segdicts)
+        new_connection_ids = [segment.connectionId for segment in new_segments]
+
+        for new_segment in new_segments:
+            existing = (
+                session.query(Segment)
+                .filter(
+                    Segment.reservation_id == reservation_id,  # type: ignore[arg-type]
+                    Segment.connectionId == new_segment.connectionId,  # type: ignore[arg-type]
+                )
+                .one_or_none()
+            )
+            if existing is None:
+                log.info("add new Segment", connectionId=new_segment.connectionId)
+                session.add(new_segment)
+            elif (
+                existing.reservation_id != new_segment.reservation_id
+                or existing.order != new_segment.order
+                or existing.providerNSA != new_segment.providerNSA
+                or existing.serviceType != new_segment.serviceType
+                or existing.capacity != new_segment.capacity
+                or existing.sourceStp != new_segment.sourceStp
+                or existing.destStp != new_segment.destStp
+                or existing.status != new_segment.status
+            ):
+                log.info("update existing Segment", connectionId=new_segment.connectionId)
+                existing.reservation_id = new_segment.reservation_id
+                existing.order = new_segment.order
+                existing.providerNSA = new_segment.providerNSA
+                existing.serviceType = new_segment.serviceType
+                existing.capacity = new_segment.capacity
+                existing.sourceStp = new_segment.sourceStp
+                existing.destStp = new_segment.destStp
+                existing.status = new_segment.status
+            else:
+                log.debug("Segment did not change", connectionId=new_segment.connectionId)
+
+        # Hard-delete segments of this reservation that are no longer reported.
+        session.execute(
+            delete(Segment).where(
+                Segment.reservation_id == reservation_id,  # type: ignore[arg-type]
+                Segment.connectionId.not_in(new_connection_ids),  # type: ignore[attr-defined]
+            )
+        )
 
