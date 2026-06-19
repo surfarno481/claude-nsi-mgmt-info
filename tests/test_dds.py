@@ -14,14 +14,12 @@
 
 """Tests for amiss.dds: DDS parsing functions."""
 
-import base64
-import zlib
 from unittest.mock import patch
 
 import pytest
 from pydantic import HttpUrl
 
-from amiss.dds import has_alias, strip_urn, to_dict, to_list, unzip
+from amiss.dds import has_alias, strip_urn
 from amiss.model import SDP, STP
 
 
@@ -38,28 +36,6 @@ class TestStripUrn:
         assert strip_urn(urn) == expected
 
 
-class TestToDict:
-    def test_with_list(self):
-        collection = [{"id": "a", "val": 1}, {"id": "b", "val": 2}]
-        assert to_dict("id", collection) == {"a": {"id": "a", "val": 1}, "b": {"id": "b", "val": 2}}
-
-    def test_with_dict(self):
-        collection = {"id": "a", "val": 1}
-        assert to_dict("id", collection) == {"a": {"id": "a", "val": 1}}
-
-    def test_with_unsupported_type(self):
-        assert to_dict("id", "string") == {}
-
-
-class TestToList:
-    def test_basic(self):
-        collection = [{"id": "a"}, {"id": "b"}]
-        assert to_list("id", collection) == ["a", "b"]
-
-    def test_single_element(self):
-        assert to_list("key", [{"key": "value"}]) == ["value"]
-
-
 class TestHasAlias:
     """has_alias now reports SDP membership via the isSdpMember flag."""
 
@@ -68,26 +44,6 @@ class TestHasAlias:
 
     def test_not_member(self, stp_factory):
         assert has_alias(stp_factory(isSdpMember=False)) is False
-
-
-class TestUnzip:
-    @staticmethod
-    def _gzip_compress(data: bytes) -> bytes:
-        """Compress data with gzip format (wbits=16+MAX_WBITS)."""
-        compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, 16 + zlib.MAX_WBITS)
-        return compressor.compress(data) + compressor.flush()
-
-    def test_roundtrip(self):
-        original = b"<topology>test</topology>"
-        compressed = base64.b64encode(self._gzip_compress(original))
-        doc = {"content": compressed.decode()}
-        assert unzip(doc) == original
-
-    def test_empty_content(self):
-        original = b""
-        compressed = base64.b64encode(self._gzip_compress(original))
-        doc = {"content": compressed.decode()}
-        assert unzip(doc) == original
 
 
 def _patch_dds_session(db_session):

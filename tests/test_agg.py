@@ -15,11 +15,11 @@
 """Tests for amiss.agg: aggregator proxy helpers (mocked HTTP)."""
 
 from unittest.mock import patch
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from pydantic import HttpUrl
 
-from amiss.model import Segment
+from amiss.model import STP, Reservation, Segment
 
 
 def _segdict(connectionId="child-seg-0", order=0, capacity=1000, sourceSTP="src?vlan=1", destSTP="dst?vlan=2", status="ACTIVATED"):
@@ -32,6 +32,27 @@ def _segdict(connectionId="child-seg-0", order=0, capacity=1000, sourceSTP="src?
         "sourceSTP": sourceSTP,
         "destSTP": destSTP,
         "status": status,
+    }
+
+
+def _resdict(
+    connectionId="9adfed42-fa58-4d26-bf74-9f5e14ab2281",
+    sourceSTP="urn:ogf:network:example:2024:topo:ps1?vlan=100",
+    destSTP="urn:ogf:network:example:2024:topo:ps2?vlan=200",
+    status="ACTIVATED",
+    capacity=1000,
+):
+    return {
+        "globalReservationId": "urn:uuid:5fa943ae-32e8-4faa-9080-0bbdc0f405e8",
+        "connectionId": connectionId,
+        "description": "test reservation",
+        "criteria": {
+            "version": 1,
+            "serviceType": "EVTS.A-GOLE",
+            "p2ps": {"capacity": capacity, "sourceSTP": sourceSTP, "destSTP": destSTP},
+        },
+        "status": status,
+        "segments": [],
     }
 
 
@@ -171,5 +192,81 @@ class TestUpdateSegments:
             connection_ids = {s.connectionId for s in db_session.query(Segment).all()}
             # "gone" removed (vanished from parent), "fresh" added, "kept-other" untouched.
             assert connection_ids == {"fresh", "kept-other"}
+        finally:
+            mock.stop()
+
+
+class TestTempPullReservationsFromAgg:
+    def _seed_stps(self, db_session, stp_factory):
+        stp_a = stp_factory(stpId="example:2024:topo:ps1", vlanRange="100-200")
+        stp_z = stp_factory(stpId="example:2024:topo:ps2", vlanRange="100-200")
+        db_session.add(stp_a)
+        db_session.add(stp_z)
+        db_session.flush()
+        return stp_a, stp_z
+
+    def test_inserts_reservation_resolving_stps_and_vlans(self, db_session, stp_factory):
+        from amiss.agg import temp_pull_reservations_from_agg
+
+        stp_a, stp_z = self._seed_stps(db_session, stp_factory)
+
+        mock = _patch_session(db_session)
+        try:
+            temp_pull_reservations_from_agg([_resdict()])
+
+            reservation = db_session.query(Reservation).one()
+            assert reservation.connectionId == UUID("9adfed42-fa58-4d26-bf74-9f5e14ab2281")
+            assert reservation.globalReservationId == UUID("5fa943ae-32e8-4faa-9080-0bbdc0f405e8")
+            assert reservation.sourceStpId == stp_a.id
+            assert reservation.destStpId == stp_z.id
+            assert reservation.sourceVlan == 100
+            assert reservation.destVlan == 200
+            assert reservation.bandwidth == 1000
+            assert reservation.state == "ACTIVATED"
+        finally:
+            mock.stop()
+
+    def test_wipes_existing_reservations_and_segments(self, db_session, reservation_factory, segment_factory):
+        from amiss.agg import temp_pull_reservations_from_agg
+
+        old = reservation_factory()
+        db_session.add(old)
+        db_session.flush()
+        db_session.add(segment_factory(connectionId="old-seg", reservation_id=old.id))
+        db_session.flush()
+
+        mock = _patch_session(db_session)
+        try:
+            temp_pull_reservations_from_agg([])  # empty list -> wipe everything, add nothing
+
+            assert db_session.query(Reservation).count() == 0
+            assert db_session.query(Segment).count() == 0
+        finally:
+            mock.stop()
+
+    def test_skips_reservation_with_unknown_stp(self, db_session, stp_factory):
+        from amiss.agg import temp_pull_reservations_from_agg
+
+        # Only the A-side STP exists; the dest STP is unknown.
+        db_session.add(stp_factory(stpId="example:2024:topo:ps1", vlanRange="100-200"))
+        db_session.flush()
+
+        mock = _patch_session(db_session)
+        try:
+            temp_pull_reservations_from_agg([_resdict()])
+            assert db_session.query(Reservation).count() == 0
+        finally:
+            mock.stop()
+
+    def test_skips_reservation_with_unparseable_vlan(self, db_session, stp_factory):
+        from amiss.agg import temp_pull_reservations_from_agg
+
+        self._seed_stps(db_session, stp_factory)
+
+        mock = _patch_session(db_session)
+        try:
+            # sourceSTP has no ?vlan= -> parse fails -> reservation skipped
+            temp_pull_reservations_from_agg([_resdict(sourceSTP="urn:ogf:network:example:2024:topo:ps1")])
+            assert db_session.query(Reservation).count() == 0
         finally:
             mock.stop()

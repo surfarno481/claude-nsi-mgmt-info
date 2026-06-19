@@ -20,7 +20,7 @@ from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.schedulers.background import BackgroundScheduler
 from pytz import utc
 
-from amiss.agg import get_aggregator_reservations, update_segments
+from amiss.agg import get_aggregator_reservations, temp_pull_reservations_from_agg, update_segments
 from amiss.db import Session
 from amiss.dds import (
     dds_proxy_json_to_sdps,
@@ -90,6 +90,8 @@ def nsi_poll_agg_job() -> None:
     if "reservations" not in jsondict:
         log.warning("no reservations in reservations JSON document")
         return
+
+    temp_pull_reservations_from_agg(jsondict["reservations"])
 
     for resdict in jsondict["reservations"]:
         if "connectionId" in resdict and "segments" in resdict:

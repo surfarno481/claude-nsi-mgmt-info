@@ -12,38 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import base64
-import zlib
-
 import structlog
 from pydantic import HttpUrl
 from sqlalchemy import or_, update
 
 from amiss.db import Session
 from amiss.model import SDP, STP
-from amiss.nsi import nsi_util_get_json, nsi_util_get_xml, nsi_xml_to_dict
+from amiss.nsi import nsi_util_get_json
 
 logger = structlog.get_logger(__name__)
 
 
-DISCOVERY_MIME_TYPE = "vnd.ogf.nsi.nsa.v1+xml"
-TOPOLOGY_MIME_TYPE = "vnd.ogf.nsi.topology.v2+xml"
-
-
 def strip_urn(urn: str) -> str:
     return urn.replace("urn:ogf:network:", "")
-
-
-def to_dict(index: str, collection: list | dict) -> dict:
-    if isinstance(collection, dict):
-        return {collection[index]: collection}
-    if isinstance(collection, list):
-        return {element[index]: element for element in collection}
-    return {}
-
-
-def to_list(index: str, collection: dict) -> list:
-    return [element[index] for element in collection]
 
 
 def update_stps(stps: list[STP]) -> None:
@@ -83,36 +64,6 @@ def update_stps(stps: list[STP]) -> None:
 def has_alias(stp: STP) -> bool:
     """Whether the STP is part of an SDP."""
     return stp.isSdpMember
-
-
-def unzip(document: dict) -> bytes:
-    """Unzip document content to bytes."""
-    return zlib.decompress(base64.b64decode(document["content"]), 16 + zlib.MAX_WBITS)
-
-
-def get_dds_documents(url: HttpUrl) -> dict[str, dict[str, bytes]]:
-    """Retrieve all documents from url and return them by type and id.
-
-    Example:
-    {'vnd.ogf.nsi.topology.v2+xml': {'urn:ogf:network:moxy.ana.dlp.surfnet.nl:2024:ana-moxy': b'<ns3:Topology> ...',
-                                     'urn:ogf:network:surf.ana.dlp.surfnet.nl:2024:ana-surf': b'<ns3:Topology> ...',
-    'vnd.ogf.nsi.nsa.v1+xml': {'urn:ogf:network:moxy.ana.dlp.surfnet.nl:2024:nsa:supa': b'<ns3:nsa ...',
-                               'urn:ogf:network:ana.dlp.surfnet.nl:2024:nsa:safnari': b'<ns3:nsa ...',
-                               'urn:ogf:network:surf.ana.dlp.surfnet.nl:2024:nsa:supa': b'<ns3:nsa ...'}}
-
-    """
-    documents: dict[str, dict[str, bytes]] = {TOPOLOGY_MIME_TYPE: {}, DISCOVERY_MIME_TYPE: {}}
-
-    xml = nsi_util_get_xml(url)  # TODO: catch Exception
-    if xml:
-        dds = nsi_xml_to_dict(xml)
-        if isinstance(dds["documents"]["document"], list):
-            for document in dds["documents"]["document"]:
-                documents[document["type"]][document["id"]] = unzip(document)
-        else:
-            documents[document["type"]][document["id"]] = unzip(document := dds["documents"]["document"])
-
-    return documents
 
 
 def get_dds_proxy_stps(proxy_url: HttpUrl) -> bytes | None:

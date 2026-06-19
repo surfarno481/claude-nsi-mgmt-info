@@ -12,14 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import structlog
 from pydantic import HttpUrl
 from sqlalchemy import delete
 
 from amiss.db import Session
-from amiss.model import Reservation, Segment
+from amiss.dds import strip_urn
+from amiss.model import STP, Reservation, ReservationSDPLink, Segment
 from amiss.nsi import nsi_util_get_json
 
 logger = structlog.get_logger(__name__)
@@ -175,4 +176,67 @@ def update_segments(parentConnectionId: str, segdicts: list) -> None:
                 Segment.connectionId.not_in(new_connection_ids),  # type: ignore[attr-defined]
             )
         )
+
+
+def _parse_stp_urn(urn: str) -> tuple[str, int]:
+    """Split an aggregator STP URN like ``urn:ogf:network:...:ps1?vlan=1790`` into (stpId, vlan).
+
+    Raises ``ValueError``/``IndexError`` when the ``?vlan=`` query is missing or not a single int.
+    """
+    base, _, query = urn.partition("?")
+    stpId = strip_urn(base)
+    vlan = int(query.split("=", 1)[1])
+    return stpId, vlan
+
+
+def temp_pull_reservations_from_agg(reservations: list) -> None:
+    """TEMP: replace all reservations in the DB with those reported by the aggregator proxy.
+
+    This is a temporary solution. Reservations should instead be pulled from the WFO (workflow
+    orchestrator, ``settings.NSI_AMISS_WFO_URL``), which is the Source of Truth for reservations;
+    the aggregator proxy is only used here as a stopgap source.
+
+    Wipes Segment, ReservationSDPLink and Reservation, then inserts a Reservation per aggregator
+    reservation. Source/dest STP URNs are resolved to STP rows for the int FKs and the VLAN comes
+    from the URN's ?vlan=; a reservation is skipped (with a warning) if either STP is unknown or the
+    data can't be parsed. Segments are repopulated afterwards by update_segments.
+    """
+    with Session.begin() as session:
+        session.execute(delete(Segment))
+        session.execute(delete(ReservationSDPLink))
+        session.execute(delete(Reservation))
+        for resdict in reservations:
+            log = logger.bind(connectionId=resdict.get("connectionId"))
+            try:
+                connection_id = UUID(resdict["connectionId"])
+                global_reservation_id = UUID(resdict["globalReservationId"].replace("urn:uuid:", ""))
+                description = resdict["description"]
+                p2ps = resdict["criteria"]["p2ps"]
+                bandwidth = int(p2ps["capacity"])
+                source_stp_id, source_vlan = _parse_stp_urn(p2ps["sourceSTP"])
+                dest_stp_id, dest_vlan = _parse_stp_urn(p2ps["destSTP"])
+                status = resdict["status"]
+            except (KeyError, ValueError, IndexError, AttributeError) as e:
+                log.warning("cannot parse aggregator reservation, skipping", error=str(e))
+                continue
+            source_stp = session.query(STP).filter(STP.stpId == source_stp_id).one_or_none()  # type: ignore[arg-type]
+            dest_stp = session.query(STP).filter(STP.stpId == dest_stp_id).one_or_none()  # type: ignore[arg-type]
+            if source_stp is None or dest_stp is None:
+                log.warning("STP not found, skipping reservation", sourceStp=source_stp_id, destStp=dest_stp_id)
+                continue
+            session.add(
+                Reservation(
+                    connectionId=connection_id,
+                    globalReservationId=global_reservation_id,
+                    correlationId=uuid4(),
+                    description=description,
+                    sourceStpId=source_stp.id,
+                    destStpId=dest_stp.id,
+                    sourceVlan=source_vlan,
+                    destVlan=dest_vlan,
+                    bandwidth=bandwidth,
+                    state=status,
+                )
+            )
+            log.info("added reservation from aggregator")
 
