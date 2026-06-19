@@ -22,16 +22,21 @@ from pytz import utc
 
 from amiss.agg import get_aggregator_reservations, update_segments
 from amiss.db import Session
-from amiss.dds import TOPOLOGY_MIME_TYPE, get_dds_documents, topology_to_stps, update_sdps, update_stps
+from amiss.dds import (
+    dds_proxy_json_to_sdps,
+    dds_proxy_json_to_stps,
+    get_dds_proxy_sdps,
+    get_dds_proxy_stps,
+    update_stps,
+)
 from amiss.fsm import ConnectionStateMachine
-from amiss.model import STP, Reservation
+from amiss.model import SDP, STP, Reservation
 from amiss.nsi import (
     nsi_send_provision,
     nsi_send_release,
     nsi_send_reserve,
     nsi_send_reserve_commit,
     nsi_send_terminate,
-    nsi_xml_to_dict,
 )
 from amiss.settings import settings
 
@@ -54,11 +59,20 @@ def new_correlation_id_on_reservation(reservation_id: int) -> None:
         reservation.correlationId = uuid4()
 
 def nsi_poll_dds_job() -> None:
-    """Poll the DDS for topology documents and update STP and SDP."""
-    documents = get_dds_documents(settings.NSI_DDS_URL)
-    stps = [stp for xml in documents[TOPOLOGY_MIME_TYPE].values() for stp in topology_to_stps(nsi_xml_to_dict(xml))]
-    update_stps(stps)
-    update_sdps()
+    """Poll the DDS proxy for STPs and SDPs and refresh the database.
+
+    Wipes the STP and SDP tables first, then repopulates them from the DDS proxy.
+    """
+    with Session.begin() as session:
+        session.query(SDP).delete()
+        session.query(STP).delete()
+    url = settings.NSI_DDS_PROXY_URL
+    stps_json = get_dds_proxy_stps(url)
+    if stps_json is not None:
+        update_stps(dds_proxy_json_to_stps(json.loads(stps_json)))
+    sdps_json = get_dds_proxy_sdps(url)
+    if sdps_json is not None:
+        dds_proxy_json_to_sdps(json.loads(sdps_json))
 
 def nsi_poll_agg_job() -> None:
     """Poll the Aggregator for reservations and persist their Segments to the database."""

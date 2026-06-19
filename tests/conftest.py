@@ -74,12 +74,9 @@ def stp_factory():
     def _make_stp(**kwargs):
         defaults = {
             "stpId": "urn:ogf:network:surf.ana.dlp.surfnet.nl:2024:ana-surf:university-1",
-            "inboundPort": None,
-            "outboundPort": None,
-            "inboundAlias": None,
-            "outboundAlias": None,
             "vlanRange": "100-200",
             "description": "Test STP",
+            "isSdpMember": False,
             "active": True,
         }
         defaults.update(kwargs)

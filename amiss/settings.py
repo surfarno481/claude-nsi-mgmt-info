@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     # NSI provider
     NSI_PROVIDER_URL: HttpUrl = HttpUrl("http://127.0.0.1:9000/nsi-v2/ConnectionServiceProvider")
     NSI_PROVIDER_ID: str = "urn:ogf:network:domain.example:2024:nsa"
-    NSI_DDS_URL: HttpUrl = HttpUrl("http://dds.domain.example/dds/") # ARNOTODO: DDS_PROXY
+    NSI_DDS_PROXY_URL: HttpUrl = HttpUrl("http://dds.domain.example/dds/")
     NSI_AGG_PROXY_URL:  HttpUrl = HttpUrl("http://aggregator-proxy.domain.example/")
 
     # upstream WFO (workflow orchestrator) management URL

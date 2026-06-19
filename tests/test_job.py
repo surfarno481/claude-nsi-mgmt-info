@@ -39,25 +39,57 @@ class TestNewCorrelationIdOnReservation:
 
 
 class TestNsiPollDdsJob:
-    @patch("amiss.job.update_sdps")
+    @patch("amiss.job.dds_proxy_json_to_sdps")
+    @patch("amiss.job.get_dds_proxy_sdps")
     @patch("amiss.job.update_stps")
-    @patch("amiss.job.topology_to_stps")
-    @patch("amiss.job.nsi_xml_to_dict")
-    @patch("amiss.job.get_dds_documents")
-    def test_calls_update_functions(
-        self, mock_get_dds, mock_xml_to_dict, mock_topo_to_stps, mock_update_stps, mock_update_sdps
+    @patch("amiss.job.dds_proxy_json_to_stps")
+    @patch("amiss.job.get_dds_proxy_stps")
+    @patch("amiss.job.Session")
+    def test_wipes_then_polls_proxy(
+        self, mock_session_cls, mock_get_stps, mock_to_stps, mock_update_stps, mock_get_sdps, mock_to_sdps
     ):
-        from amiss.job import TOPOLOGY_MIME_TYPE, nsi_poll_dds_job
+        from amiss.job import nsi_poll_dds_job
 
-        mock_get_dds.return_value = {TOPOLOGY_MIME_TYPE: {"topo1": b"<xml/>"}}
-        mock_xml_to_dict.return_value = {"id": "test"}
-        mock_topo_to_stps.return_value = []
+        mock_session = MagicMock()
+        mock_session_cls.begin.return_value.__enter__ = MagicMock(return_value=mock_session)
+        mock_session_cls.begin.return_value.__exit__ = MagicMock(return_value=False)
+
+        mock_get_stps.return_value = b'[{"id": "x"}]'
+        mock_to_stps.return_value = ["stp"]
+        mock_get_sdps.return_value = b'[{"stpAId": "a", "stpZId": "z"}]'
 
         nsi_poll_dds_job()
 
-        mock_get_dds.assert_called_once()
-        mock_update_stps.assert_called_once()
-        mock_update_sdps.assert_called_once()
+        # Both tables wiped first (query(SDP).delete(), query(STP).delete())
+        assert mock_session.query.call_count == 2
+        mock_to_stps.assert_called_once_with([{"id": "x"}])
+        mock_update_stps.assert_called_once_with(["stp"])
+        mock_to_sdps.assert_called_once_with([{"stpAId": "a", "stpZId": "z"}])
+
+    @patch("amiss.job.dds_proxy_json_to_sdps")
+    @patch("amiss.job.get_dds_proxy_sdps")
+    @patch("amiss.job.update_stps")
+    @patch("amiss.job.dds_proxy_json_to_stps")
+    @patch("amiss.job.get_dds_proxy_stps")
+    @patch("amiss.job.Session")
+    def test_skips_parsing_when_fetch_returns_none(
+        self, mock_session_cls, mock_get_stps, mock_to_stps, mock_update_stps, mock_get_sdps, mock_to_sdps
+    ):
+        from amiss.job import nsi_poll_dds_job
+
+        mock_session = MagicMock()
+        mock_session_cls.begin.return_value.__enter__ = MagicMock(return_value=mock_session)
+        mock_session_cls.begin.return_value.__exit__ = MagicMock(return_value=False)
+
+        mock_get_stps.return_value = None
+        mock_get_sdps.return_value = None
+
+        nsi_poll_dds_job()
+
+        assert mock_session.query.call_count == 2  # tables still wiped
+        mock_to_stps.assert_not_called()
+        mock_update_stps.assert_not_called()
+        mock_to_sdps.assert_not_called()
 
 
 class TestNsiPollAggJob:

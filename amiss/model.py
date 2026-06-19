@@ -34,12 +34,9 @@ class STP(SQLModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     stpId: str
-    inboundPort: str | None
-    outboundPort: str | None
-    inboundAlias: str | None
-    outboundAlias: str | None
     vlanRange: str  # our labels are VLAN's
     description: str | None
+    isSdpMember: bool = Field(default=False)  # True when this STP is part of an SDP
     active: bool = Field(default=True)
 
     @property
