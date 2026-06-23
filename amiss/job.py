@@ -49,10 +49,14 @@ def nsi_poll_dds_job() -> None:
 
     Wipes the STP and SDP tables first, then repopulates them from the DDS proxy.
     """
+    url = settings.NSI_DDS_PROXY_URL
+    log = logger.bind(url=str(url))
+    log.warning("polling dds proxy")
+
     with Session.begin() as session:
         session.query(SDP).delete()
         session.query(STP).delete()
-    url = settings.NSI_DDS_PROXY_URL
+
     stps_json = get_dds_proxy_stps(url)
     if stps_json is not None:
         update_stps(dds_proxy_json_to_stps(json.loads(stps_json)))
@@ -64,6 +68,8 @@ def nsi_poll_agg_job() -> None:
     """Poll the Aggregator for reservations and persist their Segments to the database."""
     url = settings.NSI_AGG_PROXY_URL
     log = logger.bind(url=str(url))
+    log.warning("polling agg proxy")
+
     jsondata = get_aggregator_reservations(url)
     if jsondata is None:
         # Error already logged
@@ -90,5 +96,9 @@ def nsi_poll_sources() -> None:
     Order matters: the aggregator poll's temp_pull_reservations_from_agg resolves reservation STP URNs
     against the STP rows the DDS poll just refreshed.
     """
-    nsi_poll_dds_job()
-    nsi_poll_agg_job()
+    log = logger.bind(url="about:sources")
+    if settings.SEED_DUMMY_SEGMENTS_DATA:
+        log.warning("operating on dummy data, not polling sources")
+    else:
+        nsi_poll_dds_job()
+        nsi_poll_agg_job()

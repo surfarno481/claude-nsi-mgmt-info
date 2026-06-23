@@ -52,6 +52,10 @@ class DatabaseLogHandler(Handler):
                     )
                 else:
                     reservationId = -1
+
+                # Arno: can happen with SEED_DUMMY_SEGMENT_DATA
+                if reservationId is None:
+                    reservationId = -1
                 # store the reservation related message in the database
                 if reservationId >= 0:
                     session.add(
