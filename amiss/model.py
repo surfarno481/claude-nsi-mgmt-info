@@ -147,4 +147,4 @@ class Segment(SQLModel, table=True):
     capacity: int
     sourceStp: str
     destStp: str
-    status: str
+    status: str | None = None # ARNOTODO
