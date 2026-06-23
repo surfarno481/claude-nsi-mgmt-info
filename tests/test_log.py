@@ -122,7 +122,7 @@ class TestDatabaseLogHandler:
         mock_session.add.assert_not_called()
 
     @patch("amiss.log.Session")
-    def test_emit_with_connectionId_not_found_raises(self, mock_session_cls):
+    def test_emit_with_connectionId_not_found_skips(self, mock_session_cls):
         handler = DatabaseLogHandler()
         record = LogRecord("test", 20, "test.py", 1, None, (), None)
         record.msg = {"event": "test", "connectionId": "4f0a4f6b-1187-4670-b451-bb8005105ba5"}
@@ -132,10 +132,10 @@ class TestDatabaseLogHandler:
         mock_session_cls.begin.return_value.__enter__ = MagicMock(return_value=mock_session)
         mock_session_cls.begin.return_value.__exit__ = MagicMock(return_value=False)
 
-        # scalar() returns None when not found; code does `if reservationId >= 0`
-        # which raises TypeError comparing None >= 0 (a latent bug)
-        with pytest.raises(TypeError, match="not supported between instances of 'NoneType' and 'int'"):
-            handler.emit(record)
+        # scalar() returns None when no reservation matches the connectionId (e.g. during seeding).
+        # The handler must not raise, and must not store the unmatched message.
+        handler.emit(record)
+        mock_session.add.assert_not_called()
 
 
 class TestUvicornAccessLogFilter:

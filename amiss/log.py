@@ -53,11 +53,10 @@ class DatabaseLogHandler(Handler):
                 else:
                     reservationId = -1
 
-                # Arno: can happen with SEED_DUMMY_SEGMENT_DATA
-                if reservationId is None:
-                    reservationId = -1
-                # store the reservation related message in the database
-                if reservationId >= 0:
+                # Store the message only if it maps to a real reservation. reservationId is None when
+                # a connectionId/globalReservationId/correlationId was given but no reservation matches
+                # (e.g. during seeding, or a child segment connectionId); such messages are not stored.
+                if reservationId is not None and reservationId >= 0:
                     session.add(
                         Log(
                             reservation_id=reservationId,
