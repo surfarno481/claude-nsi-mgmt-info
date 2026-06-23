@@ -14,28 +14,9 @@
 
 """Tests for amiss.job: Job functions (mocked DB and HTTP)."""
 
-from unittest.mock import MagicMock, patch
-from uuid import uuid4
+from unittest.mock import MagicMock, call, patch
 
 import pytest
-
-
-class TestNewCorrelationIdOnReservation:
-    @patch("amiss.job.Session")
-    def test_updates_correlationId(self, mock_session_cls):
-        from amiss.job import new_correlation_id_on_reservation
-
-        mock_reservation = MagicMock()
-        mock_reservation.correlationId = uuid4()
-        original_corr_id = mock_reservation.correlationId
-
-        mock_session = MagicMock()
-        mock_session.query.return_value.filter.return_value.one.return_value = mock_reservation
-        mock_session_cls.begin.return_value.__enter__ = MagicMock(return_value=mock_session)
-        mock_session_cls.begin.return_value.__exit__ = MagicMock(return_value=False)
-
-        new_correlation_id_on_reservation(1)
-        assert mock_reservation.correlationId != original_corr_id
 
 
 class TestNsiPollDdsJob:
@@ -152,196 +133,17 @@ class TestNsiPollAggJob:
         mock_update.assert_called_once_with("c1", [{"order": 0}])
 
 
-class TestNsiSendReserveJob:
-    @patch("amiss.job.nsi_send_reserve")
-    @patch("amiss.job.new_correlation_id_on_reservation")
-    @patch("amiss.job.Session")
-    def test_successful_reserve_sets_connectionId(self, mock_session_cls, mock_new_corr, mock_nsi_send):
-        from amiss.job import nsi_send_reserve_job
+class TestNsiPollSources:
+    @patch("amiss.job.nsi_poll_agg_job")
+    @patch("amiss.job.nsi_poll_dds_job")
+    def test_calls_dds_then_agg(self, mock_dds, mock_agg):
+        from amiss.job import nsi_poll_sources
 
-        conn_id = str(uuid4())
-        mock_reservation = MagicMock(id=1, connectionId=None)
-        mock_stp = MagicMock()
+        manager = MagicMock()
+        manager.attach_mock(mock_dds, "dds")
+        manager.attach_mock(mock_agg, "agg")
 
-        mock_session = MagicMock()
-        mock_session.query.return_value.filter.return_value.one.return_value = mock_reservation
+        nsi_poll_sources()
 
-        # Session() context manager for reads
-        mock_session_cls.return_value.__enter__ = MagicMock(return_value=mock_session)
-        mock_session_cls.return_value.__exit__ = MagicMock(return_value=False)
-        # Session.begin() context manager for writes
-        mock_session_cls.begin.return_value.__enter__ = MagicMock(return_value=mock_session)
-        mock_session_cls.begin.return_value.__exit__ = MagicMock(return_value=False)
-
-        mock_nsi_send.return_value = {"connectionId": conn_id}
-
-        nsi_send_reserve_job(1)
-
-        mock_nsi_send.assert_called_once()
-
-    @patch("amiss.job.nsi_send_reserve")
-    @patch("amiss.job.new_correlation_id_on_reservation")
-    @patch("amiss.job.Session")
-    def test_connection_error_triggers_error_transition(self, mock_session_cls, mock_new_corr, mock_nsi_send):
-        from amiss.job import nsi_send_reserve_job
-
-        mock_reservation = MagicMock(
-            id=1,
-            globalReservationId=uuid4(),
-            correlationId=uuid4(),
-            state="CONNECTION_RESERVE_CHECKING",
-        )
-
-        mock_session = MagicMock()
-        mock_session.query.return_value.filter.return_value.one.return_value = mock_reservation
-
-        mock_session_cls.return_value.__enter__ = MagicMock(return_value=mock_session)
-        mock_session_cls.return_value.__exit__ = MagicMock(return_value=False)
-        mock_session_cls.begin.return_value.__enter__ = MagicMock(return_value=mock_session)
-        mock_session_cls.begin.return_value.__exit__ = MagicMock(return_value=False)
-
-        mock_nsi_send.side_effect = OSError("Connection refused")
-
-        nsi_send_reserve_job(1)
-        # Should have transitioned to CONNECTION_RESERVE_FAILED via connection_error
-        assert mock_reservation.state == "CONNECTION_RESERVE_FAILED"
-
-
-class TestNsiSendTerminateJob:
-    @patch("amiss.job.nsi_send_terminate")
-    @patch("amiss.job.new_correlation_id_on_reservation")
-    @patch("amiss.job.Session")
-    def test_successful_terminate(self, mock_session_cls, mock_new_corr, mock_nsi_send):
-        from amiss.job import nsi_send_terminate_job
-
-        mock_reservation = MagicMock(id=1, correlationId=uuid4(), connectionId=uuid4())
-
-        mock_session = MagicMock()
-        mock_session.query.return_value.filter.return_value.one.return_value = mock_reservation
-        mock_session_cls.return_value.__enter__ = MagicMock(return_value=mock_session)
-        mock_session_cls.return_value.__exit__ = MagicMock(return_value=False)
-
-        mock_nsi_send.return_value = {"Body": {"terminateConfirmed": {}}}
-
-        nsi_send_terminate_job(1)
-        mock_nsi_send.assert_called_once()
-
-    @patch("amiss.job.nsi_send_terminate")
-    @patch("amiss.job.new_correlation_id_on_reservation")
-    @patch("amiss.job.Session")
-    def test_terminate_fault_logs_warning(self, mock_session_cls, mock_new_corr, mock_nsi_send):
-        from amiss.job import nsi_send_terminate_job
-
-        mock_reservation = MagicMock(id=1, correlationId=uuid4(), connectionId=uuid4())
-
-        mock_session = MagicMock()
-        mock_session.query.return_value.filter.return_value.one.return_value = mock_reservation
-        mock_session_cls.return_value.__enter__ = MagicMock(return_value=mock_session)
-        mock_session_cls.return_value.__exit__ = MagicMock(return_value=False)
-
-        mock_nsi_send.return_value = {
-            "Body": {
-                "Fault": {
-                    "detail": {
-                        "serviceException": {
-                            "nsaId": "urn:test",
-                            "errorId": "00201",
-                            "text": "Invalid state",
-                        }
-                    }
-                }
-            }
-        }
-
-        # Should not raise - fault is handled gracefully
-        nsi_send_terminate_job(1)
-
-
-class TestNsiSendReserveCommitJob:
-    @patch("amiss.job.nsi_send_reserve_commit")
-    @patch("amiss.job.new_correlation_id_on_reservation")
-    @patch("amiss.job.Session")
-    def test_successful_reserve_commit(self, mock_session_cls, mock_new_corr, mock_nsi_send):
-        from amiss.job import nsi_send_reserve_commit_job
-
-        mock_reservation = MagicMock(id=1, correlationId=uuid4(), connectionId=uuid4())
-
-        mock_session = MagicMock()
-        mock_session.query.return_value.filter.return_value.one.return_value = mock_reservation
-        mock_session_cls.return_value.__enter__ = MagicMock(return_value=mock_session)
-        mock_session_cls.return_value.__exit__ = MagicMock(return_value=False)
-
-        nsi_send_reserve_commit_job(1)
-
-        mock_new_corr.assert_called_once_with(1)
-        mock_nsi_send.assert_called_once_with(mock_reservation)
-
-
-class TestNsiSendProvisionJob:
-    @patch("amiss.job.nsi_send_provision")
-    @patch("amiss.job.new_correlation_id_on_reservation")
-    @patch("amiss.job.Session")
-    def test_successful_provision(self, mock_session_cls, mock_new_corr, mock_nsi_send):
-        from amiss.job import nsi_send_provision_job
-
-        mock_reservation = MagicMock(id=1, correlationId=uuid4(), connectionId=uuid4())
-
-        mock_session = MagicMock()
-        mock_session.query.return_value.filter.return_value.one.return_value = mock_reservation
-        mock_session_cls.return_value.__enter__ = MagicMock(return_value=mock_session)
-        mock_session_cls.return_value.__exit__ = MagicMock(return_value=False)
-
-        nsi_send_provision_job(1)
-
-        mock_new_corr.assert_called_once_with(1)
-        mock_nsi_send.assert_called_once_with(mock_reservation)
-
-
-class TestNsiSendReleaseJob:
-    @patch("amiss.job.nsi_send_release")
-    @patch("amiss.job.new_correlation_id_on_reservation")
-    @patch("amiss.job.Session")
-    def test_successful_release(self, mock_session_cls, mock_new_corr, mock_nsi_send):
-        from amiss.job import nsi_send_release_job
-
-        mock_reservation = MagicMock(id=1, correlationId=uuid4(), connectionId=uuid4())
-
-        mock_session = MagicMock()
-        mock_session.query.return_value.filter.return_value.one.return_value = mock_reservation
-        mock_session_cls.return_value.__enter__ = MagicMock(return_value=mock_session)
-        mock_session_cls.return_value.__exit__ = MagicMock(return_value=False)
-
-        mock_nsi_send.return_value = {"Body": {"releaseConfirmed": {}}}
-
-        nsi_send_release_job(1)
-        mock_nsi_send.assert_called_once()
-
-    @patch("amiss.job.nsi_send_release")
-    @patch("amiss.job.new_correlation_id_on_reservation")
-    @patch("amiss.job.Session")
-    def test_release_fault_handled_gracefully(self, mock_session_cls, mock_new_corr, mock_nsi_send):
-        from amiss.job import nsi_send_release_job
-
-        mock_reservation = MagicMock(id=1, correlationId=uuid4(), connectionId=uuid4())
-
-        mock_session = MagicMock()
-        mock_session.query.return_value.filter.return_value.one.return_value = mock_reservation
-        mock_session_cls.return_value.__enter__ = MagicMock(return_value=mock_session)
-        mock_session_cls.return_value.__exit__ = MagicMock(return_value=False)
-
-        mock_nsi_send.return_value = {
-            "Body": {
-                "Fault": {
-                    "detail": {
-                        "serviceException": {
-                            "nsaId": "urn:test",
-                            "errorId": "00201",
-                            "text": "Release failed",
-                        }
-                    }
-                }
-            }
-        }
-
-        # Should not raise - fault is handled gracefully
-        nsi_send_release_job(1)
+        # Both sources polled once, DDS before the aggregator.
+        assert manager.mock_calls == [call.dds(), call.agg()]

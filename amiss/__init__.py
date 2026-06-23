@@ -22,12 +22,11 @@ from starlette.responses import HTMLResponse, PlainTextResponse
 
 from amiss.frontend.healthcheck import router as healthcheck_router
 from amiss.frontend.home import router as home_router
-from amiss.frontend.nsi import router as nsi_router
 from amiss.frontend.reservations import router as reservations_router
 from amiss.frontend.sdp import router as sdp_router
 from amiss.frontend.stp import router as stp_router
 from amiss.frontend.spectrum import router as spectrum_router
-from amiss.job import nsi_poll_dds_job, scheduler
+from amiss.job import nsi_poll_sources, scheduler
 from amiss.log import init as log_init
 from amiss.seed import seed
 from amiss.settings import settings
@@ -47,9 +46,9 @@ if settings.SEED_DUMMY_SEGMENTS_DATA:
 # scheduler
 #
 scheduler.start()
-# run poll job every minute starting on the next whole minute and do not let jobs queue up
+# poll all upstream sources every minute starting on the next whole minute and do not let jobs queue up
 scheduler.add_job(
-    nsi_poll_dds_job,
+    nsi_poll_sources,
     trigger=IntervalTrigger(
         minutes=1, start_date=datetime.now(UTC).replace(second=0, microsecond=0) + timedelta(minutes=1)
     ),
@@ -72,7 +71,6 @@ app.include_router(stp_router, prefix="/api/stp")
 app.include_router(sdp_router, prefix="/api/sdp")
 
 app.include_router(spectrum_router, prefix="/api/spectrum")
-app.include_router(nsi_router, prefix="/api/nsi")
 app.include_router(home_router, prefix="/api")
 
 

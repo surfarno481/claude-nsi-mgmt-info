@@ -12,7 +12,6 @@
 #  limitations under the License.
 
 import json
-from uuid import UUID, uuid4
 
 import structlog
 from apscheduler.executors.pool import ThreadPoolExecutor
@@ -29,15 +28,7 @@ from amiss.dds import (
     get_dds_proxy_stps,
     update_stps,
 )
-from amiss.fsm import ConnectionStateMachine
-from amiss.model import SDP, STP, Reservation
-from amiss.nsi import (
-    nsi_send_provision,
-    nsi_send_release,
-    nsi_send_reserve,
-    nsi_send_reserve_commit,
-    nsi_send_terminate,
-)
+from amiss.model import SDP, STP
 from amiss.settings import settings
 
 # Advanced Python Scheduler
@@ -52,11 +43,6 @@ scheduler = BackgroundScheduler(
 
 logger = structlog.get_logger(__name__)
 
-
-def new_correlation_id_on_reservation(reservation_id: int) -> None:
-    with Session.begin() as session:
-        reservation = session.query(Reservation).filter(Reservation.id == reservation_id).one()  # type: ignore[arg-type]
-        reservation.correlationId = uuid4()
 
 def nsi_poll_dds_job() -> None:
     """Poll the DDS proxy for STPs and SDPs and refresh the database.
@@ -97,74 +83,12 @@ def nsi_poll_agg_job() -> None:
         if "connectionId" in resdict and "segments" in resdict:
             update_segments(resdict["connectionId"], resdict["segments"])
 
-def nsi_send_reserve_job(reservation_id: int) -> None:
-    new_correlation_id_on_reservation(reservation_id)
-    with Session() as session:
-        reservation = session.query(Reservation).filter(Reservation.id == reservation_id).one()  # type: ignore[arg-type]
-        source_stp = session.query(STP).filter(STP.id == reservation.sourceStpId).one()  # type: ignore[arg-type]  # TODO: replace with relation
-        dest_stp = session.query(STP).filter(STP.id == reservation.destStpId).one()  # type: ignore[arg-type]  # TODO: replace with relation
-    try:
-        retdict = nsi_send_reserve(reservation, source_stp, dest_stp)  # TODO: need error handling post soap failure
-    except OSError as e:
-        log = logger.bind(reservationId=reservation.id, globalReservationId=str(reservation.globalReservationId))
-        log.warning(str(e))
-        with Session.begin() as session:
-            reservation = session.query(Reservation).filter(Reservation.id == reservation_id).one()  # type: ignore[arg-type]
-            csm = ConnectionStateMachine(reservation)
-            csm.connection_error()
-    else:
-        with Session.begin() as session:
-            reservation = session.query(Reservation).filter(Reservation.id == reservation_id).one()  # type: ignore[arg-type]
-            reservation.connectionId = UUID(retdict["connectionId"])  # TODO: make nsi_comm return a UUID
 
+def nsi_poll_sources() -> None:
+    """Poll all upstream sources: the DDS proxy (STPs/SDPs) first, then the aggregator (reservations/segments).
 
-def nsi_send_reserve_commit_job(reservation_id: int) -> None:
-    new_correlation_id_on_reservation(reservation_id)
-    with Session() as session:
-        reservation = session.query(Reservation).filter(Reservation.id == reservation_id).one()  # type: ignore[arg-type]
-    nsi_send_reserve_commit(reservation)  # TODO: need error handling on failed post soap
-
-
-def nsi_send_provision_job(reservation_id: int) -> None:
-    new_correlation_id_on_reservation(reservation_id)
-    with Session() as session:
-        reservation = session.query(Reservation).filter(Reservation.id == reservation_id).one()  # type: ignore[arg-type]
-    nsi_send_provision(reservation)  # TODO: need error handling on failed post soap
-
-
-def nsi_send_terminate_job(reservation_id: int) -> None:
-    new_correlation_id_on_reservation(reservation_id)
-    with Session() as session:
-        reservation = session.query(Reservation).filter(Reservation.id == reservation_id).one()  # type: ignore[arg-type]
-    log = logger.bind(
-        reservationId=reservation.id,
-        correlationId=str(reservation.correlationId),
-        connectionId=str(reservation.connectionId),
-    )
-    log.info("send terminate to nsi provider")
-    reply_dict = nsi_send_terminate(reservation)
-    if "Fault" in reply_dict["Body"]:
-        se = reply_dict["Body"]["Fault"]["detail"]["serviceException"]
-        log.warning(f"send terminate failed: {se['text']}", nsaId=se["nsaId"], errorId=se["errorId"], text=se["text"])
-        # TODO: transition to error state (that needs to be defined)
-    else:
-        log.info("terminate successfully sent")
-
-
-def nsi_send_release_job(reservation_id: int) -> None:
-    new_correlation_id_on_reservation(reservation_id)
-    with Session() as session:
-        reservation = session.query(Reservation).filter(Reservation.id == reservation_id).one()  # type: ignore[arg-type]
-    log = logger.bind(
-        reservationId=reservation.id,
-        correlationId=str(reservation.correlationId),
-        connectionId=str(reservation.connectionId),
-    )
-    log.info("send release to nsi provider")
-    reply_dict = nsi_send_release(reservation)
-    if "Fault" in reply_dict["Body"]:
-        se = reply_dict["Body"]["Fault"]["detail"]["serviceException"]
-        log.warning(f"send release failed: {se['text']}", nsaId=se["nsaId"], errorId=se["errorId"], text=se["text"])
-        # TODO: transition to error state (that needs to be defined)
-    else:
-        log.info("send release successful")
+    Order matters: the aggregator poll's temp_pull_reservations_from_agg resolves reservation STP URNs
+    against the STP rows the DDS poll just refreshed.
+    """
+    nsi_poll_dds_job()
+    nsi_poll_agg_job()

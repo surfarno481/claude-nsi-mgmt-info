@@ -11,14 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Any
-
 from fastui import AnyComponent
 from fastui import components as c
 from fastui.components.display import DisplayLookup
-from fastui.events import GoToEvent, PageEvent
+from fastui.events import GoToEvent
 
-from amiss.fsm import ConnectionStateMachine
 from amiss.model import SDP, STP, Reservation, Segment
 from amiss.settings import settings
 
@@ -99,90 +96,6 @@ def amiss_logo() -> AnyComponent:
         ],
         class_name="+ d-flex justify-content-center",
     )
-
-
-def button_with_modal(name: str, button: str, title: str, modal: str, url: str) -> list[AnyComponent]:
-    """Create a button and modal with Cancel and Submit buttons."""
-    return [
-        c.Button(
-            text=button,
-            on_click=PageEvent(name=name),
-            class_name="+ ms-2",
-        ),
-        c.Modal(
-            title=title,
-            body=[
-                c.Paragraph(text=modal),
-                c.Form(
-                    form_fields=[],
-                    submit_url=url,
-                    footer=[],
-                    submit_trigger=PageEvent(name=f"{name}-submit"),
-                ),
-            ],
-            footer=[
-                c.Button(
-                    text="Cancel",
-                    named_style="secondary",
-                    on_click=PageEvent(name=name, clear=True),
-                ),
-                c.Button(
-                    text="Submit",
-                    on_click=PageEvent(name=f"{name}-submit"),
-                ),
-            ],
-            open_trigger=PageEvent(name=name),
-        ),
-    ]
-
-
-def to_amiss_connection_state(nsi_connection_states: dict[str, Any]) -> str:
-    amiss_connection_state = "UNKNOWN"
-    if nsi_connection_states["lifecycleState"] == "Terminated":
-        amiss_connection_state = ConnectionStateMachine.ConnectionTerminated.value
-    elif nsi_connection_states["lifecycleState"] == "Terminating":
-        amiss_connection_state = ConnectionStateMachine.ConnectionTerminating.value
-    elif nsi_connection_states["lifecycleState"] == "Failed":
-        amiss_connection_state = ConnectionStateMachine.ConnectionFailed.value
-    elif nsi_connection_states["lifecycleState"] == "PassedEndTime":
-        pass  # TODO: implement NSI lifecycleState is PassedEndTime
-    elif nsi_connection_states["reservationState"] == "ReserveChecking":  # NSI lifecycleState is Created
-        amiss_connection_state = ConnectionStateMachine.ConnectionReserveChecking.value
-    elif nsi_connection_states["reservationState"] == "ReserveHeld":
-        amiss_connection_state = ConnectionStateMachine.ConnectionReserveHeld.value
-    elif nsi_connection_states["reservationState"] == "ReserveCommitting":
-        amiss_connection_state = ConnectionStateMachine.ConnectionReserveCommitting.value
-    elif nsi_connection_states["reservationState"] == "ReserveFailed":
-        amiss_connection_state = ConnectionStateMachine.ConnectionReserveFailed.value
-    elif nsi_connection_states["reservationState"] == "ReserveTimeout":
-        amiss_connection_state = ConnectionStateMachine.ConnectionReserveTimeout.value
-    elif nsi_connection_states["reservationState"] == "ReserveAborting":
-        pass  # TODO: NSI reservationState is ReserveAborting not handled yet until modify is implemented
-    elif nsi_connection_states["provisionState"] == "Provisioning":  # NSI reservationState is ReserveStart
-        amiss_connection_state = ConnectionStateMachine.ConnectionProvisioning.value
-    elif nsi_connection_states["provisionState"] == "Releasing":
-        amiss_connection_state = ConnectionStateMachine.ConnectionReleasing.value
-    elif (
-        nsi_connection_states["provisionState"] == "Provisioned"
-        and nsi_connection_states["dataPlaneStatus"]["active"] == "true"
-    ):
-        amiss_connection_state = ConnectionStateMachine.ConnectionActive.value
-    elif (
-        nsi_connection_states["provisionState"] == "Provisioned"
-        and nsi_connection_states["dataPlaneStatus"]["active"] == "false"
-    ):
-        amiss_connection_state = ConnectionStateMachine.ConnectionProvisioned.value
-    elif (
-        nsi_connection_states["provisionState"] == "Released"
-        and nsi_connection_states["dataPlaneStatus"]["active"] == "true"
-    ):
-        amiss_connection_state = ConnectionStateMachine.ConnectionReleased.value
-    elif (
-        nsi_connection_states["provisionState"] == "Released"
-        and nsi_connection_states["dataPlaneStatus"]["active"] == "false"
-    ):
-        amiss_connection_state = ConnectionStateMachine.ConnectionReserveCommitted.value
-    return amiss_connection_state
 
 
 def reservation_table(reservations: list[Reservation]) -> c.Table:
@@ -286,11 +199,6 @@ def reservation_tabs() -> list[AnyComponent]:
                     on_click=GoToEvent(url="/reservations/all"),
                     active="startswith:/reservations/all",
                 ),
-                c.Link(
-                    components=[c.Text(text="New")],
-                    on_click=GoToEvent(url="/reservations/new"),
-                    active="startswith:/reservations/new",
-                ),
             ],
             mode="tabs",
             class_name="+ mb-4",
@@ -335,7 +243,6 @@ def button_row(buttons: list[c.Button]) -> c.Div:
 
 
 def reservation_buttons(reservation: Reservation) -> c.Div:
-    csm = ConnectionStateMachine(reservation)
     return button_row(
         [
             c.Button(
@@ -347,69 +254,6 @@ def reservation_buttons(reservation: Reservation) -> c.Div:
                 text="Log",
                 on_click=GoToEvent(url=f"/reservations/{reservation.id}/log"),
                 class_name="+ ms-2",
-            ),
-            *(
-                button_with_modal(
-                    name="modal-release-reservation",
-                    button="Release",
-                    title=f"Release reservation {reservation.description}?",
-                    modal="Are you sure you want to release this reservation?",
-                    url=f"{settings.ROOT_PATH}/api/reservations/{reservation.id}/release",
-                )
-                if csm.ConnectionActive.is_active
-                else []
-            ),
-            *(
-                button_with_modal(
-                    name="modal-provision-reservation",
-                    button="Provision",
-                    title=f"Provision reservation {reservation.description}?",
-                    modal="Are you sure you want to Provision this reservation?",
-                    url=f"{settings.ROOT_PATH}/api/reservations/{reservation.id}/provision",
-                )
-                if csm.ConnectionReserveCommitted.is_active
-                else []
-            ),
-            *(
-                button_with_modal(
-                    name="modal-reserve-again-reservation",
-                    button="Reserve Again",
-                    title=f"Reserve reservation {reservation.description} again?",
-                    modal="Are you sure you want to reserve this reservation again?",
-                    url=f"{settings.ROOT_PATH}/api/reservations/{reservation.id}/reserve-again",
-                )
-                if csm.ConnectionReserveFailed.is_active
-                or csm.ConnectionTerminated.is_active
-                else []
-            ),
-            *(
-                button_with_modal(
-                    name="modal-terminate-reservation",
-                    button="Terminate",
-                    title=f"Terminate reservation {reservation.description}?",
-                    modal="Are you sure you want to terminate this reservation?",
-                    url=f"{settings.ROOT_PATH}/api/reservations/{reservation.id}/terminate",
-                )
-                if csm.ConnectionReserveTimeout.is_active
-                or csm.ConnectionFailed.is_active
-                or csm.ConnectionReserveCommitted.is_active
-                or csm.ConnectionProvisioned.is_active
-                or csm.ConnectionReserveFailed.is_active
-                else []
-            ),
-            *(
-                [
-                    c.Button(
-                        text="Verify",
-                        on_click=GoToEvent(url=f"/reservations/{reservation.id}/verify"),
-                        class_name="+ ms-2",
-                    )
-                ]
-                if not csm.ConnectionNew.is_active
-                # and not csm.ConnectionReserveChecking.is_active
-                and not csm.ConnectionProvisioned.is_active
-                and not csm.ConnectionReserveFailed.is_active
-                else []
             ),
         ]
     )
